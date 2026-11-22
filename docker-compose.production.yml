@@ -40,10 +40,12 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
       EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
       EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+      SITE_CERT_REQUEST_DIR: ${SITE_CERT_REQUEST_DIR:-/app/cert-requests}
     volumes:
       - app_db:/app/db
       - app_uploads:/app/uploads
       - app_logs:/app/logs
+      - ${SITE_CERT_REQUEST_HOST_DIR:-/opt/payforothers-18003/cert-requests}:/app/cert-requests
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/health"]
       interval: 15s

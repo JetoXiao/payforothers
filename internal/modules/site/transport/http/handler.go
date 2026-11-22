@@ -37,6 +37,8 @@ func RegisterRoutes(r gin.IRoutes, h *Handler) {
 	r.GET("/sites", h.Sites)
 	r.POST("/sites", h.SaveSite)
 	r.PUT("/sites/:id", h.SaveSite)
+	r.POST("/sites/:id/certificate", h.RequestCertificate)
+	r.GET("/sites/:id/certificate", h.Certificate)
 	r.GET("/sites/admins/:id/grants", h.Grants)
 	r.PUT("/sites/admins/:id/grants", h.SaveGrants)
 	r.GET("/site-console/scope", h.Scope)
@@ -65,6 +67,9 @@ func (h *Handler) Sites(c *gin.Context) {
 		failure(c, 500, "Unable to load sites")
 		return
 	}
+	for i := range rows {
+		siteapp.DecorateCertificate(&rows[i])
+	}
 	response.Success(c, rows)
 }
 func (h *Handler) SaveSite(c *gin.Context) {
@@ -91,6 +96,62 @@ func (h *Handler) SaveSite(c *gin.Context) {
 	}
 	h.record(c, "site_save", nil, jsonmap.JSON{"site_id": row.ID, "domain": row.Domain, "name": row.Name, "enabled": row.Enabled})
 	response.Success(c, row)
+}
+
+func (h *Handler) RequestCertificate(c *gin.Context) {
+	if !super(c) {
+		return
+	}
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	rows, err := h.service.Store.ListSites()
+	if err != nil {
+		failure(c, 500, "Unable to load site")
+		return
+	}
+	var site *sitedomain.Site
+	for i := range rows {
+		if rows[i].ID == id {
+			site = &rows[i]
+			break
+		}
+	}
+	if site == nil {
+		failure(c, 404, "Site not found")
+		return
+	}
+	if err := siteapp.RequestCertificate(site); err != nil {
+		failure(c, 400, err.Error())
+		return
+	}
+	siteapp.DecorateCertificate(site)
+	h.record(c, "site_certificate_request", &id, jsonmap.JSON{"site_id": id, "domain": site.Domain})
+	response.Success(c, site)
+}
+
+func (h *Handler) Certificate(c *gin.Context) {
+	if !super(c) {
+		return
+	}
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	rows, err := h.service.Store.ListSites()
+	if err != nil {
+		failure(c, 500, "Unable to load site")
+		return
+	}
+	for _, site := range rows {
+		if site.ID == id {
+			status := siteapp.ReadCertificateStatus(id)
+			response.Success(c, status)
+			return
+		}
+	}
+	failure(c, 404, "Site not found")
 }
 func (h *Handler) Grants(c *gin.Context) {
 	if !super(c) {
@@ -151,11 +212,13 @@ func (h *Handler) Scope(c *gin.Context) {
 	visible := []sitedomain.Site{}
 	for _, row := range rows {
 		if c.GetBool("admin_is_super") {
+			siteapp.DecorateCertificate(&row)
 			visible = append(visible, row)
 			continue
 		}
 		for _, g := range scope.Grants {
 			if g.SiteID == row.ID {
+				siteapp.DecorateCertificate(&row)
 				visible = append(visible, row)
 				break
 			}

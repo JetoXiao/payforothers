@@ -1,0 +1,10 @@
+[Unit]
+Description=Process PayForOthers subsite certificate requests
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=10s
+Unit=site-cert-helper.service
+
+[Install]
+WantedBy=timers.target

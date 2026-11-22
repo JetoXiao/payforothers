@@ -4,12 +4,16 @@ import "time"
 
 // Site is an operator-owned storefront. Domains are immutable and never reused.
 type Site struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
-	Name      string    `gorm:"size:100;not null" json:"name"`
-	Domain    string    `gorm:"size:253;uniqueIndex;not null" json:"domain"`
-	Enabled   bool      `gorm:"not null;default:true" json:"enabled"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                     uint      `gorm:"primarykey" json:"id"`
+	Name                   string    `gorm:"size:100;not null" json:"name"`
+	Domain                 string    `gorm:"size:253;uniqueIndex;not null" json:"domain"`
+	Enabled                bool      `gorm:"not null;default:true" json:"enabled"`
+	CreatedAt              time.Time `json:"created_at"`
+	UpdatedAt              time.Time `json:"updated_at"`
+	CertificateStatus      string    `gorm:"-" json:"certificate_status,omitempty"`
+	CertificateExpiresAt   string    `gorm:"-" json:"certificate_expires_at,omitempty"`
+	CertificateError       string    `gorm:"-" json:"certificate_error,omitempty"`
+	CertificateRequestedAt string    `gorm:"-" json:"certificate_requested_at,omitempty"`
 }
 
 func (Site) TableName() string { return "storefront_sites" }

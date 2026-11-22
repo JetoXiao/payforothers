@@ -1,0 +1,9 @@
+[Unit]
+Description=PayForOthers subsite certificate issuer
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/payforothers-18003/scripts/site-cert-helper.sh --once

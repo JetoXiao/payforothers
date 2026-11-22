@@ -34,6 +34,7 @@ let detailVersion = 0
 const grantsForAdmin = ref('')
 const editing = ref<Partial<Site>>({ name: '', domain: '', enabled: true })
 const siteEditorOpen = ref(false)
+const certificateBusy = ref<number | null>(null)
 const params = computed(() => ({ site_id: selected.value === '' ? undefined : Number(selected.value), from: from.value, to: to.value, keyword: keyword.value, status: status.value, page: page.value, page_size: 20 }))
 const can = (menu: Tab) => scope.value.is_super || (menu !== 'settings' && scope.value.grants.some(g => g.site_id === Number(selected.value) && g[menu]))
 const menus = computed(() => tabs.filter(t => can(t.id)))
@@ -84,6 +85,12 @@ async function saveSite() {
 }
 function openSiteEditor(site?: Site) { editing.value = site ? { ...site } : { name: '', domain: '', enabled: true }; siteEditorOpen.value = true }
 function closeSiteEditor() { if (!busy.value) siteEditorOpen.value = false }
+const certificateLabel = (site: Site) => ({ issued: 'HTTPS 已签发', issuing: '签发中', pending: '等待签发', error: '签发失败' }[site.certificate_status || ''] || '未申请')
+async function requestCertificate(site: Site) {
+  if (certificateBusy.value) return
+  certificateBusy.value = site.id; message.value = ''
+  try { const response = await sitesAPI.requestCertificate(site.id); const updated = response.data.data as Site; Object.assign(site, updated); message.value = `已提交 ${site.domain} 的证书申请。请确保 Cloudflare DNS 已指向本服务器，助手会自动完成签发并配置 Nginx。` } catch (e: any) { message.value = e?.message || '提交证书申请失败' } finally { certificateBusy.value = null }
+}
 async function loadGrants() {
   const version = ++grantVersion
   const id = adminID.value
@@ -143,7 +150,7 @@ onMounted(async () => {
     </template>
     <template v-if="tab === 'settings' && scope.is_super">
       <div class="section-heading"><div><h2>站点与管理员</h2><p class="muted">域名创建后不可更改或复用。停用会保留历史数据，DNS、证书和反向代理需单独配置。</p></div><button class="primary-button" @click="openSiteEditor()">新增站点</button></div>
-      <div class="table-card"><div class="table-wrap"><table><thead><tr><th>站点名称</th><th>访问域名</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="site in scope.sites" :key="site.id"><td><strong>{{ site.name }}</strong></td><td class="mono">{{ site.domain }}</td><td><span class="status-tag" :class="site.enabled ? 'enabled' : 'disabled'">{{ site.enabled ? '运行中' : '已停用' }}</span></td><td><button class="secondary-button" @click="openSiteEditor(site)">编辑站点</button></td></tr></tbody></table></div></div>
+      <div class="table-card"><div class="table-wrap"><table><thead><tr><th>站点名称</th><th>访问域名</th><th>状态</th><th>HTTPS</th><th>操作</th></tr></thead><tbody><tr v-for="site in scope.sites" :key="site.id"><td><strong>{{ site.name }}</strong></td><td class="mono">{{ site.domain }}</td><td><span class="status-tag" :class="site.enabled ? 'enabled' : 'disabled'">{{ site.enabled ? '运行中' : '已停用' }}</span></td><td><span class="status-tag" :class="site.certificate_status === 'issued' ? 'enabled' : site.certificate_status === 'error' ? 'disabled' : 'pending'">{{ certificateLabel(site) }}</span><small v-if="site.certificate_expires_at" class="muted cert-expiry">至 {{ site.certificate_expires_at }}</small></td><td class="site-actions"><button class="secondary-button" @click="openSiteEditor(site)">编辑站点</button><button class="secondary-button" :disabled="certificateBusy === site.id || site.certificate_status === 'pending' || site.certificate_status === 'issuing'" @click="requestCertificate(site)">{{ certificateBusy === site.id ? '提交中…' : site.certificate_status === 'issued' ? '重新申请' : '申请 HTTPS' }}</button></td></tr></tbody></table></div></div>
       <h2 class="subsection-title">管理员个人菜单授权</h2>
       <p class="muted">先在 <RouterLink to="/authz" class="permission-link">权限管理</RouterLink> 创建普通管理员，再选择具体账号配置菜单。同一子站可有多名管理员，每个人使用独立授权。例如 A 只看订单、B 看用户和订单、C 看经营统计。下列组合仅用于快速填写当前个人的勾选项，保存后可以继续自定义。</p>
       <label>管理员账号<select v-model="adminID" :disabled="busy" @change="loadGrants"><option value="">请选择</option><option v-for="admin in admins" :key="admin.id" :value="String(admin.id)">{{ admin.username }}（{{ admin.id }}）</option></select></label>
@@ -169,6 +176,7 @@ header p,.muted { color: hsl(var(--muted-foreground)); line-height: 1.7; font-si
 .secondary-button,.primary-button { border-radius:9px; } .primary-button { background:#0f766e; color:#fff; border-color:#0f766e; } .primary-button:hover:not(:disabled) { background:#115e59; }
 .table-card { padding:0; overflow:hidden; } .table-card .table-wrap { padding:0; } .table-card > .table-wrap + .filters { padding:12px; } .table-card > .table-wrap + .pagination { padding:12px; }
 .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.site-actions { display:flex; flex-wrap:wrap; gap:7px; } .cert-expiry { display:block; margin-top:4px; font-size:10px; }
 .user-type { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:11px; font-weight:650; white-space:nowrap; } .user-type.registered { color:#1d4ed8; background:#eff6ff; } .user-type.guest { color:#a16207; background:#fefce8; }
 .modal-backdrop { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:rgb(15 23 42 / .44); backdrop-filter:blur(3px); }
 .modal-card { width:min(100%, 640px); max-height:min(86vh, 760px); overflow:auto; border:1px solid hsl(var(--border)); border-radius:18px; background:hsl(var(--card)); box-shadow:0 24px 80px rgb(15 23 42 / .28); padding:22px; }
