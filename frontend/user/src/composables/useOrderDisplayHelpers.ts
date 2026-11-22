@@ -9,6 +9,7 @@ import { buildSkuDisplayTextFromSnapshot } from '../utils/sku'
 import { getImageUrl } from '../utils/image'
 import { copyText } from '../utils/clipboard'
 import { shouldPollAutoFulfillment } from '../utils/autoFulfillment'
+import { replaceRedemptionUrlForDisplay } from '../utils/content'
 
 interface ManualFormSnapshotField {
   key: string
@@ -107,12 +108,14 @@ export function useOrderDisplayHelpers(order: Ref<any>) {
     if (!Array.isArray(items)) return []
     const seen = new Set<string>()
     const blocks: Array<{ title: string; html: string }> = []
+    const redemptionUrl = String(appStore.config?.brand?.redemption_url || '').trim()
     for (const item of items) {
       const html = String(getLocalizedText(item?.instructions) || '').trim()
       if (!html) continue
-      if (seen.has(html)) continue
-      seen.add(html)
-      blocks.push({ title: getLocalizedText(item?.title), html: sanitizeInstructionsHtml(html) })
+      const displayHtml = sanitizeInstructionsHtml(replaceRedemptionUrlForDisplay(html, redemptionUrl))
+      if (seen.has(displayHtml)) continue
+      seen.add(displayHtml)
+      blocks.push({ title: getLocalizedText(item?.title), html: displayHtml })
     }
     return blocks
   }
