@@ -390,6 +390,7 @@ export function usePayment() {
   const showResultView = computed(() => Boolean(paymentResult.value && order.value && order.value.status === 'pending_payment' && !orderExpired.value && !orderCanceled.value))
   const pollingActive = computed(() => pollTimer.value !== null)
   const orderItems = computed(() => (Array.isArray(order.value?.items) ? order.value.items : []))
+  const hasAutoFulfillmentItems = computed(() => orderItems.value.some((item: any) => ['auto', 'upstream'].includes(String(item?.fulfillment_type || ''))))
   const customerFeeApplied = computed(() => isCustomerSurchargePayment(paymentResult.value) && (amountToCents(paymentResult.value?.fee_amount) || 0) > 0)
   // payable_amount/amount/online_pay_amount 均为 payment.Amount 或其派生值——换汇渠道
   // （如 Stripe 配置了 target_currency+exchange_rate）下这是结算币种数值（如 GBP），
@@ -1392,6 +1393,7 @@ export function usePayment() {
     showResultView,
     pollingActive,
     orderItems,
+    hasAutoFulfillmentItems,
     // amounts
     customerFeeApplied,
     customerFeeAmountDisplay,

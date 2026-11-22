@@ -20,6 +20,7 @@ import (
 	emailverificationdomain "github.com/dujiao-next/internal/modules/identity/emailverification/domain"
 	externalidentitydomain "github.com/dujiao-next/internal/modules/identity/externalidentity/domain"
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
+	invoicedomain "github.com/dujiao-next/internal/modules/invoice/domain"
 	memberleveldomain "github.com/dujiao-next/internal/modules/memberlevel/domain"
 	notificationdomain "github.com/dujiao-next/internal/modules/notification/domain"
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
@@ -93,6 +94,9 @@ func AutoMigrate() error {
 		&broadcastdomain.Broadcast{},
 		&memberleveldomain.MemberLevel{},
 		&memberleveldomain.MemberLevelPrice{},
+		&invoicedomain.Profile{},
+		&invoicedomain.Request{},
+		&invoicedomain.OrderLink{},
 		&contentdomain.Media{},
 	); err != nil {
 		return err

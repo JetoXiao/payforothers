@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteName": "Dujiao-Next",
+    "siteName": "GptPayNow",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
@@ -49,7 +49,15 @@
     "products": "Products",
     "blog": "Blog",
     "notice": "Notice",
-    "about": "About"
+    "about": "About",
+    "tutorial": "Recharge guide",
+    "redemption": "Redeem code"
+  },
+  "tutorial": {
+    "backHome":"Back to home","title":"ChatGPT recharge and redemption guide","subtitle":"A single guide for pre-purchase checks, plan selection, CDK redemption, troubleshooting, and after-sales handling. Availability follows the product and order pages.","updated":"For the current product flow","readTime":"About 5 min read","contents":"Guide contents","chooseProduct":"Choose a product",
+    "contentsItems":{"before":"Before you buy","choose":"Choose a plan","purchase":"Place an order","redeem":"Redeem and verify","troubleshoot":"Troubleshooting","aftercare":"After-sales rules"},
+    "sections":{"before":{"title":"Before you buy","intro":"Check the account and product conditions before payment. Region, subscription status, and redemption method may differ by product."},"choose":{"title":"Choose a plan","intro":"Choose by usage intensity. Confirm the current account state before choosing Go, Plus, or Pro."},"purchase":{"title":"Choose and place an order","intro":"The product page shows price, SKU, delivery, stock, and support conditions. The order page is the source of truth."},"redeem":{"title":"Redeem and verify","intro":"For CDK products, redeem inside your own account. We never need your ChatGPT password, cookies, session tokens, or verification codes.","note":"If a product requires manual handling, submit only the necessary non-login information through the order page. Never send passwords, codes, or recovery codes in chat."},"troubleshoot":{"title":"Troubleshooting"},"aftercare":{"title":"After-sales rules","intro":"Support follows the product and order terms. Keep the order number, payment record, and page error so we can investigate quickly."}},
+    "items":{"before":{"account":"Prepare a ChatGPT account that can sign in normally.","status":"Check that the account has no incompatible active subscription. Do not buy a non-overriding CDK for an already subscribed account.","region":"Confirm that the product region, channel, and account requirements match your account.","noCredentials":"Never share passwords, cookies, session tokens, verification codes, or 2FA recovery codes."},"choose":{"goTitle":"Go","goText":"For lighter use and a smaller budget. Confirm the product region and redemption conditions.","plusTitle":"Plus","plusText":"For everyday writing, study, work, and regular coding.","proTitle":"Pro","proText":"For frequent use, deep research, long tasks, and higher limits. Check the multiplier and restrictions first."},"purchase":{"one":"Open the home page and review the title, price, SKU, delivery, and support terms.","two":"Choose a product that matches the account state, region, duration, and override rules.","three":"Click Buy now, provide the checkout information, and complete payment.","four":"Save the order number. The order page shows whether delivery is automatic or manual."},"redeem":{"one":"Open the order detail and copy the CDK or read the redemption instructions.","two":"Redeem inside your own ChatGPT account. Do not hand login credentials to anyone.","three":"Refresh ChatGPT, sign out and back in, then verify the plan/subscription page.","four":"If the benefit is delayed, wait and retry according to the order instructions. Do not pay again."},"faq":{"failedQ":"What if the CDK fails?","failedA":"Check the account state, region, and code completeness. Retry after the time shown on the page. If it still fails, contact support with the order number and error.","pendingQ":"What if the CDK is not delivered right after payment?","pendingA":"Check payment and delivery status in order lookup. Do not pay again; contact support after the expected time has passed.","noPlanQ":"What if payment succeeded but the plan is not visible?","noPlanA":"Sign out and back in, then check the subscription page and order state. The provider may take time to update.","wrongRegionQ":"Can I redeem a product for another region?","wrongRegionA":"Do not force it. Region or channel mismatch may fail; contact support before trying another route."},"aftercare":{"one":"Support covers issues described by the order and product terms.","two":"Redeem CDKs soon after purchase instead of storing them for a long time.","three":"For support, provide the order number, payment record, product name, and page error.","four":"Issues caused by account state, region mismatch, wrong purchase, or leaked codes follow the refund terms on the product page."}}
   },
   "vault": {
     "hero": {
@@ -108,14 +116,18 @@
     "description": "The page you are looking for may have been moved, deleted, or the URL is incorrect. You can continue exploring other sections of {site}.",
     "quickLinksTitle": "Quick Links",
     "backHome": "Back to Home",
-    "backPrevious": "Go Back"
+    "backPrevious": "Go Back",
+    "tutorial": "Recharge guide",
+    "orders": "Order lookup"
   },
   "home": {
     "hero": {
-      "title": "Dujiao-Next",
-      "subtitle": "Professional Products and Services Provider",
+      "title": "GPT plans, made simple.",
+      "subtitle": "ChatGPT subscriptions for everyday questions, images, coding, and deep research.",
       "cta": "Browse Products",
-      "badge": "Next Gen Digital Store"
+      "badge": "GPT PRODUCTS · DIGITAL SERVICES",
+      "visualFallback": "AI product space",
+      "abilities": {"reasoningTitle":"Deep reasoning","reasoningText":"Break down complex questions and plan multi-step tasks.","latestTitle":"Research & analysis","latestText":"Organize sources and key insights to support your research.","imagesTitle":"Images & vision","imagesText":"Understand images and turn ideas into visual content.","codeTitle":"Coding partner","codeText":"Write, explain, and debug code to move your projects forward.","note":"Capabilities are illustrative. Models, features, and limits depend on your plan and official account availability."}
     },
     "stats": {
       "activeUsers": "Active Users",
@@ -124,10 +136,21 @@
       "support": "Support"
     },
     "featured": {
-      "title": "Featured Products",
-      "description": "Discover our premium collection of digital assets, curated for excellence.",
+      "eyebrow": "GPT PRODUCTS",
+      "title": "GPT subscription plans",
+      "description": "Choose the GPT subscription plan that fits your workflow.",
+      "countLabel": "products",
       "empty": "No products available",
       "viewAll": "View All Products"
+    },
+    "seoIntro": {"title":"ChatGPT and GPT subscription service","description":"GptPayNow provides ChatGPT Plus and GPT Pro subscription plans with public pricing, specifications, purchase notes, and delivery details. Customers can choose a plan, complete payment, and check order status online.","scope":"Review the product details and ChatGPT recharge guide before purchase. Availability, account requirements, model features, and service periods follow the product page and the official account page.","keywords":"ChatGPT recharge, ChatGPT Plus subscription, GPT Plus, GPT Pro, AI subscription service"},
+    "trust": {
+      "selectionTitle": "Focused on GPT",
+      "selectionDescription": "Clear ChatGPT plans, simple checkout, and fast delivery.",
+      "orderTitle": "Clear order tracking",
+      "orderDescription": "Payment, order, and delivery status stay easy to find.",
+      "supportTitle": "Human support",
+      "supportDescription": "We follow up quickly when something needs attention."
     },
     "cta": {
       "title": "Ready to Start?",
@@ -216,7 +239,9 @@
     "addCartStockExceeded": "Insufficient stock for this SKU. You can purchase up to {count}",
     "addCartStockExceededWithCart": "Insufficient stock for this SKU. You can purchase up to {count} ({cartCount} already in cart)",
     "addCartLimitExceeded": "This product can be purchased up to {count} per order",
-    "addCartLimitExceededWithCart": "This product can be purchased up to {count} per order ({cartCount} already in cart)"
+    "addCartLimitExceededWithCart": "This product can be purchased up to {count} per order ({cartCount} already in cart)",
+    "purchaseGuideTitle":"Purchase notes",
+    "purchaseGuide":{"beforeTitle":"Before you buy","beforeText":"Check the region, term, and your account’s current subscription status; variants are not interchangeable.","deliveryTitle":"Delivery & redemption","deliveryText":"Use the order status after payment. Redeem a code in your own ChatGPT account following official prompts.","accountTitle":"Account safety","accountText":"We never need your ChatGPT password, cookies, session token, verification code, or recovery code.","supportTitle":"Support","supportText":"For failed redemption, wrong delivery, or missing access, keep the order number and redacted screenshots."}
   },
   "quickBuy": {
     "title": "Quick Buy",
@@ -259,8 +284,8 @@
   },
   "about": {
     "title": "About Us",
-    "subtitle": "Learn about Dujiao-Next",
-    "introduction": "Dujiao-Next is a professional online studio dedicated to providing high-quality products and services to our customers. Innovation, professionalism, and efficiency are our core values, and we constantly pursue excellence to create value for our customers.",
+    "subtitle": "About GptPayNow",
+    "introduction": "GptPayNow focuses on clear, reliable ChatGPT subscriptions and digital services.",
     "ourServices": "Our Services",
     "service1": "Premium Product Recommendations & Sales",
     "service2": "Professional Pre-sales Consulting",
@@ -288,6 +313,7 @@
     "me": "Me"
   },
   "personalCenter": {
+    "invoice":{"title":"Invoice information","subtitle":"Maintain multiple billing profiles and choose one when requesting an invoice.","add":"Add billing profile","empty":"No billing profiles","default":"Default","name":"Billing name","taxpayerId":"Tax ID","address":"Registered address","phone":"Registered phone","bankName":"Bank name","bankAccount":"Bank account","email":"Invoice email","save":"Save"},
     "title": "Personal Center",
     "subtitle": "Manage profile, security settings and recent orders",
     "tabs": {
@@ -1148,6 +1174,7 @@
     "minPurchaseNotMet": "This product requires at least {count} per order"
   },
   "checkout": {
+    "invoice":{"title":"Request an invoice","hint":"Listed prices exclude tax. Invoices are handled manually and sent to your saved email.","selectProfile":"Select billing information","manageHint":"Maintain your company/individual name, tax ID, address, phone, bank details, and email in Personal Center first.","manage":"Manage in Personal Center","pendingNotice":"Processing usually takes 1–2 business days. Issued invoices cannot be requested again.","tax":"Invoice tax"},
     "title": "Checkout",
     "subtitle": "Review order and submit",
     "empty": "Your cart is empty",
@@ -1286,6 +1313,7 @@
     "changeMethod": "Change payment method",
     "refreshStatus": "Refresh status",
     "pollingHint": "Checking payment status...",
+    "upstreamFulfillmentHint": "After payment, the system automatically prepares your delivery. This may take a short time. The order page updates automatically, so no refresh is needed. Please do not pay again.",
     "selected": "Selected",
     "redirectOpened": "Payment page opened in a new tab",
     "redirectOpenedTelegram": "Payment link opened. Complete the payment and return to this page to refresh the status.",
@@ -1683,11 +1711,14 @@
       "delivered": "Delivered"
     },
     "fulfillmentCopy": "Copy",
+    "redemptionUrl": "Redemption URL",
+    "redemptionCode": "Redemption code",
     "fulfillmentCopied": "Copied",
     "fulfillmentDownload": "Download",
     "fulfillmentTotalLines": "{count} items in total",
     "fulfillmentDownloading": "Downloading...",
-    "fulfillmentTruncatedHint": "Showing first 100 items only. Please download for full content."
+    "fulfillmentTruncatedHint": "Showing first 100 items only. Please download for full content.",
+    "autoFulfillmentProcessing": "Payment is confirmed. We are automatically procuring your redemption code. This page updates automatically; no refresh or duplicate order is needed."
   },
   "guestOrders": {
     "title": "Guest Order Lookup",

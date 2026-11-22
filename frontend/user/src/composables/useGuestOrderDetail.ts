@@ -6,6 +6,7 @@ import { debounceAsync } from '../utils/debounce'
 import { clearGuestOrderAuth, loadGuestOrderAuth, saveGuestOrderAuth } from '../utils/guestOrderAuth'
 import { resolveGuestOrderDetailViewState } from '../utils/guestOrderDetailState'
 import { useOrderDisplayHelpers } from './useOrderDisplayHelpers'
+import { shouldPollAutoFulfillment } from '../utils/autoFulfillment'
 
 /**
  * 游客订单详情逻辑（classic + vault 共用）。
@@ -23,6 +24,7 @@ export function useGuestOrderDetail() {
     order_password: '',
   })
   const fulfillmentDownloading = ref(false)
+  const fulfillmentPollTimer = ref<number | null>(null)
 
   const helpers = useOrderDisplayHelpers(order)
 
@@ -58,8 +60,8 @@ export function useGuestOrderDetail() {
     showAuthForm: showAuthForm.value,
   }))
 
-  const loadOrder = async () => {
-    loading.value = true
+  const loadOrder = async (silent = false) => {
+    if (!silent) loading.value = true
     try {
       if (!hasAuth.value) {
         order.value = null
@@ -72,15 +74,33 @@ export function useGuestOrderDetail() {
       })
       order.value = response.data.data
       authError.value = ''
+      syncFulfillmentPolling()
     } catch (error) {
-      order.value = null
-      authError.value = t('guestOrderDetail.authInvalid')
+      if (!silent) {
+        order.value = null
+        authError.value = t('guestOrderDetail.authInvalid')
+      }
     } finally {
-      loading.value = false
+      if (!silent) loading.value = false
     }
   }
 
   const debouncedLoadOrder = debounceAsync(loadOrder, 300)
+
+  const needsFulfillmentPoll = () => {
+    return shouldPollAutoFulfillment(order.value)
+  }
+
+  const syncFulfillmentPolling = () => {
+    if (needsFulfillmentPoll()) {
+      if (!fulfillmentPollTimer.value) fulfillmentPollTimer.value = window.setInterval(() => { void loadOrder(true) }, 3000)
+      return
+    }
+    if (fulfillmentPollTimer.value) {
+      window.clearInterval(fulfillmentPollTimer.value)
+      fulfillmentPollTimer.value = null
+    }
+  }
 
   const persistAuth = () => {
     saveGuestOrderAuth({
@@ -104,6 +124,10 @@ export function useGuestOrderDetail() {
     clearGuestOrderAuth()
     auth.value = { email: '', order_password: '' }
     order.value = null
+    if (fulfillmentPollTimer.value) {
+      window.clearInterval(fulfillmentPollTimer.value)
+      fulfillmentPollTimer.value = null
+    }
     authError.value = t('guestOrderDetail.authRequired')
   }
 
@@ -118,6 +142,7 @@ export function useGuestOrderDetail() {
 
   onUnmounted(() => {
     debouncedLoadOrder.cancel()
+    if (fulfillmentPollTimer.value) window.clearInterval(fulfillmentPollTimer.value)
   })
 
   return {

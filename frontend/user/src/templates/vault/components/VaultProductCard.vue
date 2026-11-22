@@ -21,7 +21,7 @@
     <!-- 属性徽章：交付方式 · 购买类型 · 库存 -->
     <div class="mx-1 flex flex-wrap items-center gap-1.5">
       <span class="inline-flex items-center gap-1 rounded-full bg-[color:var(--teal-soft)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--teal-strong)]">
-        <component :is="product.fulfillment_type === 'auto' ? Zap : Pencil" class="h-3 w-3" />
+        <component :is="['auto', 'upstream'].includes(product.fulfillment_type) ? Zap : Pencil" class="h-3 w-3" />
         {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
       </span>
       <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="product.purchase_type === 'guest' ? 'bg-[color:var(--gold-soft)] text-[color:var(--gold-strong)]' : 'bg-[color:var(--teal-soft)] text-[color:var(--teal-strong)]'">

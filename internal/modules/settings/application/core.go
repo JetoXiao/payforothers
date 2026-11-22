@@ -2,6 +2,8 @@ package settingsapp
 
 import (
 	"github.com/dujiao-next/internal/config"
+	"github.com/dujiao-next/internal/constants"
+	invoicedomain "github.com/dujiao-next/internal/modules/invoice/domain"
 	settingscontract "github.com/dujiao-next/internal/modules/settings/contract"
 	"github.com/dujiao-next/internal/shared/jsonmap"
 )
@@ -73,6 +75,13 @@ func (s *Service) UpdateWithEffects(key string, value map[string]interface{}) (U
 		return UpdateResult{}, nil
 	}
 	normalized := s.registry.Normalize(key, jsonmap.JSON(value))
+	if key == constants.SettingKeyInvoiceConfig {
+		cfg, err := invoicedomain.ParseConfig(jsonmap.JSON(value))
+		if err != nil {
+			return UpdateResult{}, err
+		}
+		normalized = cfg.JSON()
+	}
 
 	stored, err := s.repo.Upsert(key, normalized)
 	if err != nil {

@@ -8,6 +8,7 @@ import { amountToCents, centsToAmount } from '../utils/money'
 import { buildSkuDisplayTextFromSnapshot } from '../utils/sku'
 import { getImageUrl } from '../utils/image'
 import { copyText } from '../utils/clipboard'
+import { shouldPollAutoFulfillment } from '../utils/autoFulfillment'
 
 interface ManualFormSnapshotField {
   key: string
@@ -34,6 +35,8 @@ export function useOrderDisplayHelpers(order: Ref<any>) {
     const status = String(order.value?.status || '').trim()
     return status === 'refunded' || status === 'partially_refunded'
   })
+
+  const isAutoFulfillmentProcessing = computed(() => shouldPollAutoFulfillment(order.value))
 
   const refundRecords = computed(() => {
     const records = order.value?.refund_records
@@ -283,6 +286,14 @@ export function useOrderDisplayHelpers(order: Ref<any>) {
     return lines
   }
 
+  const fulfillmentDisplayLines = (fulfillment: any) => {
+    const lines = fulfillmentDeliveryLines(fulfillment)
+    const url = String(appStore.config?.brand?.redemption_url || '').trim()
+    const payload = String(fulfillment?.payload || '').trim()
+    if (url && payload && !lines.length) return [`${t('orderDetail.redemptionUrl')}：${url}`, `${t('orderDetail.redemptionCode')}：${payload}`]
+    return lines.length ? lines : (payload ? [payload] : [])
+  }
+
   const handleCopyFulfillment = async (fulfillment: any) => {
     const lines = fulfillmentDeliveryLines(fulfillment)
     const text = lines.length > 0 ? lines.join('\n') : (fulfillment?.payload || '')
@@ -300,6 +311,7 @@ export function useOrderDisplayHelpers(order: Ref<any>) {
     showTimeCard,
     showRefundRecordsCard,
     refundRecords,
+    isAutoFulfillmentProcessing,
     // 状态/标签
     statusLabel,
     statusVariant,
@@ -323,6 +335,7 @@ export function useOrderDisplayHelpers(order: Ref<any>) {
     formatItemPaidAmount,
     manualSubmissionRows,
     fulfillmentDeliveryLines,
+    fulfillmentDisplayLines,
     instructionBlocks,
     // 发货复制态
     fulfillmentCopied,

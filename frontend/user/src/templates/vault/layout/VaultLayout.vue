@@ -4,11 +4,13 @@
     <header class="sticky top-0 z-50 border-b bg-[color:var(--bg)]">
       <div class="mx-auto flex h-[70px] w-full max-w-[1180px] items-center gap-3 px-4 sm:gap-5 sm:px-6">
         <RouterLink class="inline-flex min-w-0 items-center gap-2.5 text-[19px] font-extrabold tracking-[-0.02em] text-foreground" to="/" :title="brandName">
-          <img v-if="brandLogo" :src="brandLogo" :alt="brandName" class="h-8 max-w-[120px] object-contain sm:max-w-[160px]" />
-          <span v-else class="truncate">{{ brandName }}</span>
+          <img :src="brandLogo" :alt="brandName" class="h-8 max-w-[120px] object-contain sm:max-w-[160px]" />
+          <span class="truncate">{{ brandName }}</span>
         </RouterLink>
 
         <nav class="flex gap-0.5 max-[900px]:hidden">
+          <RouterLink to="/tutorials/chatgpt-recharge" class="whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800 dark:text-cyan-300 dark:hover:bg-cyan-400/10">{{ t('nav.tutorial') }}</RouterLink>
+          <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800 dark:text-blue-300 dark:hover:bg-blue-400/10">{{ t('nav.redemption') }}</a>
           <template v-for="item in menuItems" :key="item.key">
             <RouterLink
               v-if="item.type === 'route'"
@@ -70,6 +72,8 @@
                 <RouterLink v-if="item.type === 'route'" :to="item.path" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ item.label }}</RouterLink>
                 <a v-else :href="item.path" :target="item.target" rel="noopener noreferrer" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ item.label }}</a>
               </template>
+              <RouterLink to="/tutorials/chatgpt-recharge" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 dark:text-cyan-300 dark:hover:bg-cyan-400/10" @click="moreOpen = false">{{ t('nav.tutorial') }}</RouterLink>
+              <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-400/10" @click="moreOpen = false">{{ t('nav.redemption') }}</a>
               <RouterLink v-if="!userAuthStore.isAuthenticated" to="/guest/orders" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.guestOrders') }}</RouterLink>
               <RouterLink v-if="userAuthStore.isAuthenticated" to="/me" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.personalCenter') }}</RouterLink>
               <RouterLink v-else to="/auth/login" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.login') }}</RouterLink>
@@ -95,8 +99,8 @@
       <div class="mx-auto grid w-full max-w-[1180px] grid-cols-1 gap-[30px] px-6 pb-9 pt-[52px] sm:grid-cols-2 lg:grid-cols-[1.7fr_repeat(3,1fr)]">
         <div>
           <RouterLink class="inline-flex items-center gap-2.5 text-[19px] font-extrabold tracking-[-0.02em] text-foreground" to="/">
-            <img v-if="brandLogo" :src="brandLogo" :alt="brandName" class="h-8 max-w-[160px] object-contain" />
-            <span v-else>{{ brandName }}</span>
+          <img :src="brandLogo" :alt="brandName" class="h-8 max-w-[160px] object-contain" />
+            <span>{{ brandName }}</span>
           </RouterLink>
           <p class="mt-3 max-w-[36ch] text-[14.5px] text-muted-foreground">{{ brandDescription || t('vault.footer.tagline') }}</p>
         </div>
@@ -109,6 +113,7 @@
         </div>
         <div>
           <h4 class="mb-3 text-sm font-bold">{{ t('vault.footer.support') }}</h4>
+          <WechatSupport compact class="mb-3" />
           <RouterLink v-if="aboutEnabled" to="/about" class="flex items-center gap-[7px] py-[5px] text-[14.5px] text-muted-foreground hover:text-primary"><Info class="h-4 w-4" /> {{ t('nav.about') }}</RouterLink>
           <RouterLink v-if="!userAuthStore.isAuthenticated" to="/guest/orders" class="flex items-center gap-[7px] py-[5px] text-[14.5px] text-muted-foreground hover:text-primary"><ClipboardList class="h-4 w-4" /> {{ t('navbar.guestOrders') }}</RouterLink>
           <a v-if="contact?.telegram" :href="contact.telegram" target="_blank" rel="noopener noreferrer" class="flex items-center gap-[7px] py-[5px] text-[14.5px] text-muted-foreground hover:text-primary"><Send class="h-4 w-4" /> Telegram</a>
@@ -137,6 +142,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import WechatSupport from '../../../components/WechatSupport.vue'
 import { useI18n } from 'vue-i18n'
 import {
   Search, Moon, Sun, ShoppingCart, Languages, Menu, X, User, Info, ClipboardList, LogOut, Github,
@@ -177,8 +183,9 @@ const year = new Date().getFullYear()
 const brandName = computed(() => String(appStore.config?.brand?.site_name || '').trim() || 'D&J Studio')
 const brandLogo = computed(() => {
   const raw = String(appStore.config?.brand?.site_logo || '').trim()
-  return raw ? getImageUrl(raw) : ''
+  return raw ? getImageUrl(raw) : '/gptpaynow.svg'
 })
+const redemptionUrl = computed(() => String(appStore.config?.brand?.redemption_url || '').trim())
 const brandDescription = computed(() => {
   const desc = appStore.config?.brand?.site_description
   if (desc && typeof desc === 'object') {

@@ -1,55 +1,30 @@
 <template>
   <nav
-    class="fixed top-0 left-0 right-0 z-50 bg-card/80 border-b backdrop-blur-md transition-all"
-    :class="scrolled ? 'py-2 shadow-lg' : 'py-4'"
+    class="fixed left-0 right-0 top-0 z-50 border-b bg-background/90 backdrop-blur-md transition-all"
+    :class="scrolled ? 'py-2' : 'py-3'"
     :style="{ transitionDuration: 'var(--ui-duration-normal)' }">
-    <div class="container mx-auto px-4 flex items-center justify-between gap-4">
+    <div class="container mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
       <!-- Logo -->
-      <router-link to="/" class="theme-wordmark group relative gap-3" :title="brandSiteName">
+      <router-link to="/" class="group relative inline-flex min-w-0 items-center gap-3" :title="brandSiteName">
         <img
-          v-if="brandLogo"
           :src="brandLogo"
           :alt="brandSiteName"
           class="h-8 max-w-[180px] shrink-0 object-contain"
         />
-        <span class="theme-wordmark-text">{{ brandSiteName }}</span>
+        <span class="truncate text-[15px] font-semibold tracking-[-0.02em] text-foreground">{{ brandSiteName }}</span>
       </router-link>
 
-      <!-- Desktop Menu -->
-      <div class="hidden lg:flex items-center space-x-1 min-w-0 overflow-x-auto scrollbar-hide">
-        <template v-for="item in menuItems" :key="item.key">
-          <Button v-if="item.type === 'route'" as-child variant="ghost" size="sm"
-            class="gap-1.5 text-muted-foreground whitespace-nowrap shrink-0">
-            <router-link :to="item.path" active-class="!text-primary !bg-primary/10">
-              <component :is="item.icon" class="w-4 h-4 shrink-0 opacity-70" />
-              <span>{{ item.label }}</span>
-            </router-link>
-          </Button>
-          <Button v-else as-child variant="ghost" size="sm"
-            class="gap-1.5 text-muted-foreground whitespace-nowrap shrink-0">
-            <a :href="item.path" :target="item.target" rel="noopener noreferrer">
-              <component :is="item.icon" class="w-4 h-4 shrink-0 opacity-70" />
-              <span>{{ item.label }}</span>
-            </a>
-          </Button>
-        </template>
+      <div class="flex shrink-0 items-center justify-center gap-2 lg:flex-1">
+        <router-link to="/tutorials/chatgpt-recharge" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-cyan-300 bg-cyan-300 px-3 text-xs font-semibold text-slate-950 shadow-sm transition hover:bg-cyan-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-500 sm:px-5 sm:text-sm">
+          <BookOpen class="h-4 w-4 shrink-0" /> {{ t('nav.tutorial') }}
+        </router-link>
+        <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-200 sm:px-5 sm:text-sm">
+          <TicketCheck class="h-4 w-4 shrink-0" /> {{ t('nav.redemption') }}
+        </a>
       </div>
 
       <!-- Right Side Actions -->
-      <div class="flex items-center shrink-0 space-x-2 lg:space-x-4">
-        <!-- Cart (desktop only, mobile has bottom nav) -->
-        <Button as-child variant="ghost" size="sm" class="hidden lg:flex relative gap-2 text-muted-foreground">
-          <router-link to="/cart">
-            <ShoppingCart class="w-4 h-4 shrink-0" />
-            <span class="text-xs font-medium">{{ t('navbar.cart') }}</span>
-            <span v-if="cartCount > 0"
-              class="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none min-w-[1.1rem] bg-primary text-primary-foreground"
-              :class="{ 'theme-bounce-in': cartBounce }">
-              {{ cartCount }}
-            </span>
-          </router-link>
-        </Button>
-
+      <div class="flex items-center shrink-0 space-x-0 sm:space-x-2 lg:space-x-4">
         <Button v-if="!userAuthStore.isAuthenticated" as-child variant="ghost" size="sm"
           class="hidden lg:inline-flex gap-1.5 text-muted-foreground whitespace-nowrap">
           <router-link to="/guest/orders">
@@ -147,23 +122,17 @@
             </Button>
           </div>
 
-          <!-- Navigation items not in bottom nav -->
-          <template v-for="item in mobileDrawerItems" :key="item.key">
-            <Button v-if="item.type === 'route'" as-child variant="ghost"
-              class="w-full justify-start gap-3 h-auto py-3 rounded-xl text-sm text-muted-foreground [&_svg]:size-5">
-              <router-link :to="item.path" @click="showMobileMenu = false" active-class="!text-primary !bg-primary/10">
-                <component :is="item.icon" class="shrink-0 opacity-60" />
-                {{ item.label }}
-              </router-link>
-            </Button>
-            <Button v-else as-child variant="ghost"
-              class="w-full justify-start gap-3 h-auto py-3 rounded-xl text-sm text-muted-foreground [&_svg]:size-5">
-              <a :href="item.path" :target="item.target" rel="noopener noreferrer" @click="showMobileMenu = false">
-                <component :is="item.icon" class="shrink-0 opacity-60" />
-                {{ item.label }}
-              </a>
-            </Button>
-          </template>
+          <!-- Recharge guide -->
+          <Button as-child variant="ghost"
+            class="w-full justify-start gap-3 h-auto py-3 rounded-xl text-sm font-semibold text-cyan-600 hover:bg-cyan-400/10 dark:text-cyan-300 [&_svg]:size-5">
+            <router-link to="/tutorials/chatgpt-recharge" @click="showMobileMenu = false" active-class="!bg-cyan-400/15">
+              <BookOpen class="shrink-0" />
+              {{ t('nav.tutorial') }}
+            </router-link>
+          </Button>
+          <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-400/10 dark:text-blue-300" @click="showMobileMenu = false">
+            <TicketCheck class="shrink-0" /> {{ t('nav.redemption') }}
+          </a>
 
           <!-- Guest orders (not in bottom nav) -->
           <Button v-if="!userAuthStore.isAuthenticated" as-child variant="ghost"
@@ -204,37 +173,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
-import { useCartStore } from '../stores/cart'
 import { useUserAuthStore } from '../stores/userAuth'
 import { useTheme } from '../utils/theme'
 import { getImageUrl } from '../utils/image'
-import { useNavConfig } from '../composables/useNavConfig'
 import {
-  Sun, Moon, ShoppingCart, ClipboardList, LogIn, User, LogOut, Languages,
-  EllipsisVertical, X,
+  Sun, Moon, ClipboardList, LogIn, User, LogOut, Languages, BookOpen,
+  EllipsisVertical, X, TicketCheck,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 const { t } = useI18n()
 const appStore = useAppStore()
-const cartStore = useCartStore()
 const userAuthStore = useUserAuthStore()
 const { theme, toggleTheme } = useTheme()
-const { primaryNavItems, secondaryNavItems } = useNavConfig()
 
 const showMobileMenu = ref(false)
 const langOpen = ref(false)
 const scrolled = ref(false)
-const cartBounce = ref(false)
-
-const menuItems = primaryNavItems
-
-// Mobile drawer only shows items NOT in the bottom nav (Home, Products, Cart, Me are in bottom nav)
-const mobileDrawerItems = secondaryNavItems
 
 const languages = [
   { code: 'zh-CN', name: '简体中文' },
@@ -248,17 +207,17 @@ const currentLocale = computed(() => {
   return lang.code === 'en-US' ? 'EN' : (lang.code === 'zh-CN' ? '简' : '繁')
 })
 
-const cartCount = computed(() => cartStore.totalItems)
 
 const brandSiteName = computed(() => {
   const text = String(appStore.config?.brand?.site_name || '').trim()
-  return text !== '' ? text : 'Dujiao-Next'
+  return text !== '' ? text : 'GptPayNow'
 })
 
 const brandLogo = computed(() => {
   const raw = String(appStore.config?.brand?.site_logo || '').trim()
-  return raw ? getImageUrl(raw) : ''
+  return raw ? getImageUrl(raw) : '/gptpaynow.svg'
 })
+const redemptionUrl = computed(() => String(appStore.config?.brand?.redemption_url || '').trim())
 
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
@@ -272,14 +231,6 @@ const changeLanguage = (langCode: string) => {
 const handleScroll = () => {
   scrolled.value = window.scrollY > 20
 }
-
-// Cart badge bounce animation on count change
-watch(cartCount, (newVal, oldVal) => {
-  if (newVal > oldVal) {
-    cartBounce.value = true
-    setTimeout(() => { cartBounce.value = false }, 400)
-  }
-})
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })

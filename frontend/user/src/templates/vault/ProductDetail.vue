@@ -23,8 +23,8 @@
       <section class="grid gap-11 py-2.5 lg:grid-cols-2">
         <!-- 图区 -->
         <div>
-          <div class="relative grid h-[380px] place-items-center overflow-hidden rounded-xl" :class="images.length ? '' : 'bg-[linear-gradient(135deg,#7b74f2,var(--red))]'">
-            <img v-if="currentImage" :src="currentImage" :alt="getLocalizedText(product.title)" class="absolute inset-0 h-full w-full object-cover" />
+          <div class="relative grid aspect-square place-items-center overflow-hidden rounded-xl" :class="images.length ? '' : 'bg-[linear-gradient(135deg,#7b74f2,var(--red))]'">
+            <img v-if="currentImage" :src="currentImage" :alt="getLocalizedText(product.title)" class="absolute inset-0 h-full w-full object-contain" />
             <Package v-else class="h-[110px] w-[110px] text-white/95" />
           </div>
           <div v-if="images.length > 1" class="mt-3.5 flex flex-wrap gap-3">
@@ -48,7 +48,7 @@
           <div class="mb-1.5 flex flex-wrap gap-2">
             <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-semibold" :class="stockPillTone">{{ getStockStatusLabel(product) }}</span>
             <span class="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--teal-soft)] px-2.5 py-1 text-[12.5px] font-semibold text-[color:var(--teal-strong)]">
-              <component :is="product.fulfillment_type === 'auto' ? Zap : Pencil" class="h-3.5 w-3.5" />
+              <component :is="['auto', 'upstream'].includes(product.fulfillment_type) ? Zap : Pencil" class="h-3.5 w-3.5" />
               {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
             </span>
             <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-semibold" :class="product.purchase_type === 'guest' ? 'bg-[color:var(--gold-soft)] text-[color:var(--gold-strong)]' : 'bg-[color:var(--teal-soft)] text-[color:var(--teal-strong)]'">
@@ -192,9 +192,11 @@
         </div>
         <div class="prose max-w-none dark:prose-invert prose-a:text-primary prose-img:rounded-md">
           <p v-if="getLocalizedText(product.description)">{{ getLocalizedText(product.description) }}</p>
-          <div v-if="product.content" v-html="processHtmlForDisplay(getLocalizedText(product.content))"></div>
+          <div v-if="product.content" v-html="productSupportHtml(replaceRedemptionUrlForDisplay(processHtmlForDisplay(getLocalizedText(product.content)), String(appStore.config?.brand?.redemption_url || '').trim()))"></div>
         </div>
       </section>
+
+      <div v-if="hasWechatSupport" class="my-6 rounded-xl border bg-card p-6"><WechatSupport /></div>
 
       <!-- 相关文章 -->
       <section v-if="relatedPosts.length" class="py-9">
@@ -253,11 +255,16 @@ import {
   RotateCw, ShoppingCart, Tag, TicketCheck, UserPlus, Zap,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { processHtmlForDisplay } from '../../utils/content'
+import { processHtmlForDisplay, replaceRedemptionUrlForDisplay } from '../../utils/content'
+import WechatSupport from '../../components/WechatSupport.vue'
+import { useWechatSupport } from '../../composables/useWechatSupport'
+import { useAppStore } from '../../stores/app'
 import { useProductDetail } from '../../composables/useProductDetail'
 import VaultProductMobileBar from './components/VaultProductMobileBar.vue'
 
 const { t } = useI18n()
+const { hasWechatSupport, productSupportHtml } = useWechatSupport()
+const appStore = useAppStore()
 
 // 移动端固定购买条：IntersectionObserver 监听桌面购买区是否出屏
 const purchaseActionsRef = ref<HTMLElement | null>(null)

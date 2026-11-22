@@ -1,5 +1,9 @@
 # Dujiao-Next
 
+> 本工作区已补充面向 Autnine 上游的生产部署与运营手册。请先阅读
+> [docs/DEPLOYMENT_ZH.md](docs/DEPLOYMENT_ZH.md)。该方案只支持合法卡密/兑换链接和正式上游 API，
+> 不收集或复用顾客的 ChatGPT 密码、Cookie、Session Token、验证码或 2FA 恢复码。
+
 Dujiao-Next is a digital goods e-commerce platform. This repository contains the complete
 application: the Go backend, the customer storefront, and the admin panel.
 

@@ -6,6 +6,7 @@ import { debounceAsync } from '../utils/debounce'
 import { useConfirmDialog } from './useConfirmDialog'
 import { toast } from './useToast'
 import { useOrderDisplayHelpers } from './useOrderDisplayHelpers'
+import { shouldPollAutoFulfillment } from '../utils/autoFulfillment'
 
 /**
  * 已登录用户订单详情逻辑（classic + vault 共用）。
@@ -19,6 +20,7 @@ export function useOrderDetail() {
   const loading = ref(true)
   const order = ref<any>(null)
   const fulfillmentDownloading = ref(false)
+  const fulfillmentPollTimer = ref<number | null>(null)
 
   const helpers = useOrderDisplayHelpers(order)
 
@@ -39,19 +41,35 @@ export function useOrderDetail() {
     }
   }
 
-  const loadOrder = async () => {
-    loading.value = true
+  const loadOrder = async (silent = false) => {
+    if (!silent) loading.value = true
     try {
       const response = await userOrderAPI.detail(String(route.params.order_no || '').trim())
       order.value = response.data.data
+      syncFulfillmentPolling()
     } catch (error) {
-      order.value = null
+      if (!silent) order.value = null
     } finally {
-      loading.value = false
+      if (!silent) loading.value = false
     }
   }
 
   const debouncedLoadOrder = debounceAsync(loadOrder, 300)
+
+  const needsFulfillmentPoll = () => {
+    return shouldPollAutoFulfillment(order.value)
+  }
+
+  const syncFulfillmentPolling = () => {
+    if (needsFulfillmentPoll()) {
+      if (!fulfillmentPollTimer.value) fulfillmentPollTimer.value = window.setInterval(() => { void loadOrder(true) }, 3000)
+      return
+    }
+    if (fulfillmentPollTimer.value) {
+      window.clearInterval(fulfillmentPollTimer.value)
+      fulfillmentPollTimer.value = null
+    }
+  }
 
   const cancelOrder = async () => {
     if (!order.value) return
@@ -81,6 +99,7 @@ export function useOrderDetail() {
 
   onUnmounted(() => {
     debouncedLoadOrder.cancel()
+    if (fulfillmentPollTimer.value) window.clearInterval(fulfillmentPollTimer.value)
   })
 
   return {

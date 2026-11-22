@@ -96,9 +96,16 @@ func (s *WriteService) Update(id string, input CreateProductInput) (*productdoma
 	if fulfillmentType == "" {
 		return nil, productcontract.ErrFulfillmentInvalid
 	}
-	// 对接商品的真实交付类型必须保持 upstream，后台返回的 auto/manual 仅用于展示。
+	// Display auto/manual cannot change a mapping's mode. Require an explicit override;
+	// omitted values preserve the mode for older API clients.
 	if product.IsMapped {
-		fulfillmentType = constants.FulfillmentTypeUpstream
+		fulfillmentType = product.FulfillmentType
+		if input.LocalManualFulfillment != nil {
+			fulfillmentType = constants.FulfillmentTypeUpstream
+			if *input.LocalManualFulfillment {
+				fulfillmentType = constants.FulfillmentTypeManual
+			}
+		}
 	}
 	product.FulfillmentType = fulfillmentType
 	if fulfillmentType == constants.FulfillmentTypeManual {

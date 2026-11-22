@@ -11,15 +11,17 @@ import (
 
 	"github.com/dujiao-next/internal/constants"
 	settingsapp "github.com/dujiao-next/internal/modules/settings/application"
+	settingsmessaging "github.com/dujiao-next/internal/modules/settings/schema/messaging"
 	"github.com/dujiao-next/internal/shared/jsonmap"
 )
 
 type adminSettingsStub struct {
 	updateCalls int
+	value       jsonmap.JSON
 }
 
 func (s *adminSettingsStub) GetByKey(string) (jsonmap.JSON, error) {
-	return nil, nil
+	return s.value, nil
 }
 
 func (s *adminSettingsStub) UpdateWithEffects(string, map[string]interface{}) (settingsapp.UpdateResult, error) {
@@ -28,6 +30,28 @@ func (s *adminSettingsStub) UpdateWithEffects(string, map[string]interface{}) (s
 }
 
 func (s *adminSettingsStub) InvalidateCallbackRoutesCache() {}
+
+func TestGenericNotificationSettingsMaskSecretsAndRejectWrites(t *testing.T) {
+	setting := settingsmessaging.NotificationCenterDefaultSetting()
+	setting.Channels.WeCom.Webhook = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=secret0123456789abcdef"
+	stub := &adminSettingsStub{value: jsonmap.JSON(settingsmessaging.NotificationCenterSettingToMap(setting))}
+	h := NewAdminHandler(stub)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("GET", "/settings?key="+constants.SettingKeyNotificationCenterConfig, nil)
+	h.Get(c)
+	if strings.Contains(rec.Body.String(), "secret0123") || !strings.Contains(rec.Body.String(), `"has_webhook":true`) {
+		t.Fatal("secret leak or missing mask")
+	}
+	rec = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest("PUT", "/settings", strings.NewReader(`{"key":"`+constants.SettingKeyNotificationCenterConfig+`","value":{"channels":{}}}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+	h.Update(c)
+	if stub.updateCalls != 0 || !strings.Contains(rec.Body.String(), "/admin/settings/notification-center") {
+		t.Fatal("generic write bypass")
+	}
+}
 
 func TestAdminHandlerRejectsGoogleAuthOnGenericUpdate(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -59,6 +59,11 @@ type FeishuSender interface {
 	SendMessage(ctx context.Context, appID, appSecret, receiveIDType, receiveID, message string) error
 }
 
+type WeComSender interface {
+	// eventKey is empty for explicitly requested test messages.
+	SendMessage(ctx context.Context, webhook, eventKey, message string) error
+}
+
 type LogRepository interface {
 	Create(log *domain.NotificationLog) error
 	ListAdmin(filter LogListFilter) ([]domain.NotificationLog, int64, error)

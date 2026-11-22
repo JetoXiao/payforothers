@@ -47,6 +47,7 @@ import (
 	usercontract "github.com/dujiao-next/internal/modules/identity/user/contract"
 	userauthapp "github.com/dujiao-next/internal/modules/identity/userauth/application"
 	usertotpapp "github.com/dujiao-next/internal/modules/identity/userauth/totp/application"
+	invoicecontract "github.com/dujiao-next/internal/modules/invoice/contract"
 	memberlevelapp "github.com/dujiao-next/internal/modules/memberlevel/application"
 	memberlevelcontract "github.com/dujiao-next/internal/modules/memberlevel/contract"
 	memberlevelgormstore "github.com/dujiao-next/internal/modules/memberlevel/infrastructure/gormstore"
@@ -128,6 +129,8 @@ type Container struct {
 	MemberLevelRepo        memberlevelcontract.LevelRepository
 	MemberLevelPriceRepo   *memberlevelgormstore.PriceStore
 	MemberLevelUserRepo    memberlevelcontract.UserRepository
+	InvoiceStore           invoicecontract.ProfileStore
+	InvoiceRequestStore    invoicecontract.RequestStore
 
 	// Services
 	AuthzService                  *authz.Service

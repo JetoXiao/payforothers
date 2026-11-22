@@ -1,10 +1,11 @@
 <template>
-  <div class="products-page min-h-screen bg-background text-foreground pt-20 pb-16">
-    <div class="container mx-auto px-4">
+  <div class="products-page min-h-screen bg-background pb-16 pt-24 text-foreground">
+    <div class="container mx-auto max-w-7xl px-4 sm:px-6">
       <!-- Page Header -->
-      <div class="mb-12 mt-12 text-center">
-        <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight text-foreground">{{ t('nav.products') }}</h1>
-        <p class="text-muted-foreground max-w-2xl mx-auto text-lg border-b pb-8">
+      <div class="mb-10 border-b pb-10">
+        <p class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{{ t('products.categories') }}</p>
+        <h1 class="text-4xl font-semibold tracking-[-0.04em] text-foreground md:text-5xl">{{ t('nav.products') }}</h1>
+        <p class="mx-0 mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
           {{ t('products.subtitle') }}
         </p>
       </div>

@@ -23,7 +23,10 @@
           </RouterView>
         </ErrorBoundary>
       </main>
-      <Footer v-if="!isResellerConsole" />
+      <div v-if="!isResellerConsole" class="pointer-events-none fixed bottom-4 right-4 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-card/90 p-1 text-[11px] text-muted-foreground shadow-lg backdrop-blur-md sm:bottom-5 sm:right-6">
+        <RouterLink to="/privacy" class="pointer-events-auto rounded-full px-3 py-1.5 transition hover:bg-muted hover:text-foreground">{{ t('footer.privacy') }}</RouterLink>
+        <RouterLink to="/terms" class="pointer-events-auto rounded-full px-3 py-1.5 transition hover:bg-muted hover:text-foreground">{{ t('footer.terms') }}</RouterLink>
+      </div>
       <BackToTop v-if="!isResellerConsole" />
       <MobileBottomNav v-if="!isResellerConsole" />
     </template>
@@ -37,10 +40,10 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from './stores/app'
 import { getActiveTemplate } from './templates/registry'
 import Navbar from './components/Navbar.vue'
-import Footer from './components/Footer.vue'
 import Loading from './components/Loading.vue'
 import Toast from './components/Toast.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
@@ -54,6 +57,7 @@ const VaultLayout = defineAsyncComponent(() => import('./templates/vault/layout/
 // config 由 router.beforeEach 统一加载，无需在此重复调用
 const appStore = useAppStore()
 const route = useRoute()
+const { t } = useI18n()
 const isResellerConsole = computed(() => route.meta.resellerConsole === true)
 // getActiveTemplate 读取 appStore.config（响应式），config 加载后会重新计算
 const isVault = computed(() => getActiveTemplate() === 'vault')

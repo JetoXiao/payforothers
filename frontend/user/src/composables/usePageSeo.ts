@@ -16,6 +16,8 @@ export interface PageSeoOptions {
   type?: () => string | undefined | null
   /** 标识页面不该被索引（私密页/动态查询页） */
   noindex?: () => boolean
+  /** 页面关键词，优先于站点全局关键词 */
+  keywords?: () => string | undefined | null
 }
 
 const trimSlashEnd = (s: string) => s.replace(/\/+$/, '')
@@ -109,9 +111,10 @@ export function usePageSeo(options: PageSeoOptions = {}) {
     meta: () => {
       const tags: Array<{ name?: string; property?: string; content: string }> = []
 
-      if (options.noindex?.()) {
-        tags.push({ name: 'robots', content: 'noindex, nofollow' })
-      }
+      tags.push({ name: 'robots', content: options.noindex?.() ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' })
+
+      const keywords = options.keywords?.()
+      if (keywords && String(keywords).trim()) tags.push({ name: 'keywords', content: String(keywords).trim() })
 
       if (fullDescription.value) {
         tags.push({ name: 'description', content: fullDescription.value })

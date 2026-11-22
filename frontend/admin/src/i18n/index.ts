@@ -1,7 +1,13 @@
 import { createI18n } from 'vue-i18n'
+import { storefrontControls } from './storefrontControls'
+import { orderVoiceMessages } from './orderVoice'
+import { wecomMessages } from './wecom'
 
 const messages = {
   'zh-CN': {
+    wecom: wecomMessages['zh-CN'],
+    orderVoice: orderVoiceMessages['zh-CN'],
+    storefrontControls: storefrontControls['zh-CN'],
     common: {
       api: {
         responseMissing: '响应内容为空',
@@ -252,6 +258,12 @@ const messages = {
       createButton: '新建连接',
       editTitle: '编辑连接',
       createTitle: '新建连接',
+      autninePreset: {
+        title: 'Autnine 上游预设',
+        description: '自动填写 Dujiao-Next 协议、正式站点地址、回调地址和稳妥的重试参数；API Key 与 Secret 仍需从 Autnine 审核后取得。',
+        action: '应用预设',
+        applied: '已应用 Autnine 预设，请填写 API Key 和 Secret',
+      },
       columns: {
         id: 'ID',
         name: '名称',
@@ -484,10 +496,10 @@ const messages = {
       },
     },
     admin: {
-      brand: 'Dujiao-Next Admin',
+      brand: 'GptPayNow Admin',
       layout: {
-        controlRoom: 'Dujiao-Next Admin 控制台',
-        workspace: 'Dujiao-Next Admin 后台',
+        controlRoom: 'GptPayNow Admin 控制台',
+        workspace: 'GptPayNow Admin 后台',
         navigation: '导航菜单',
         collapseSidebar: '收起侧边栏',
         expandSidebar: '展开侧边栏',
@@ -2697,6 +2709,7 @@ const messages = {
       settings: {
         title: '系统设置',
         subtitle: '管理网站全局配置、SEO及法律条款',
+        invoice: { title: '发票配置', subtitle: '商品标价为未含税价，分别配置普票和专票税率。', enabled: '启用开票申请', enabledDesc: '正式发票由运营者人工开具并发送到用户预留邮箱。', ordinaryRate: '普通发票税率（%）', specialRate: '专用发票税率（%）' },
         saved: '设置已保存',
         saveFailed: '保存失败',
         actions: {
@@ -4449,6 +4462,9 @@ const messages = {
     },
   },
   'zh-TW': {
+    wecom: wecomMessages['zh-TW'],
+    orderVoice: orderVoiceMessages['zh-TW'],
+    storefrontControls: storefrontControls['zh-TW'],
     common: {
       api: {
         responseMissing: '回應內容為空',
@@ -4699,6 +4715,12 @@ const messages = {
       createButton: '新建連接',
       editTitle: '編輯連接',
       createTitle: '新建連接',
+      autninePreset: {
+        title: 'Autnine 上游預設',
+        description: '自動填寫 Dujiao-Next 協議、正式站點地址、回調地址和穩妥的重試參數；API Key 與 Secret 仍需從 Autnine 審核後取得。',
+        action: '套用預設',
+        applied: '已套用 Autnine 預設，請填寫 API Key 和 Secret',
+      },
       columns: {
         id: 'ID',
         name: '名稱',
@@ -4931,10 +4953,10 @@ const messages = {
       },
     },
     admin: {
-      brand: 'Dujiao-Next Admin',
+      brand: 'GptPayNow Admin',
       layout: {
-        controlRoom: 'Dujiao-Next Admin 控制台',
-        workspace: 'Dujiao-Next Admin 後台',
+        controlRoom: 'GptPayNow Admin 控制台',
+        workspace: 'GptPayNow Admin 後台',
         navigation: '導航選單',
         collapseSidebar: '收起側邊欄',
         expandSidebar: '展開側邊欄',
@@ -8896,6 +8918,9 @@ const messages = {
     },
   },
   'en-US': {
+    wecom: wecomMessages['en-US'],
+    orderVoice: orderVoiceMessages['en-US'],
+    storefrontControls: storefrontControls['en-US'],
     common: {
       api: {
         responseMissing: 'Empty response',
@@ -9146,6 +9171,12 @@ const messages = {
       createButton: 'New Connection',
       editTitle: 'Edit Connection',
       createTitle: 'New Connection',
+      autninePreset: {
+        title: 'Autnine upstream preset',
+        description: 'Fills the Dujiao-Next protocol, production base URL, callback URL, and conservative retry settings. Obtain the API Key and Secret from Autnine after approval.',
+        action: 'Apply preset',
+        applied: 'Autnine preset applied. Enter the API Key and Secret.',
+      },
       columns: {
         id: 'ID',
         name: 'Name',
@@ -9378,10 +9409,10 @@ const messages = {
       },
     },
     admin: {
-      brand: 'Dujiao-Next Admin',
+      brand: 'GptPayNow Admin',
       layout: {
-        controlRoom: 'Dujiao-Next Admin Control Panel',
-        workspace: 'Dujiao-Next Admin Workspace',
+        controlRoom: 'GptPayNow Admin Control Panel',
+        workspace: 'GptPayNow Admin Workspace',
         navigation: 'Navigation',
         collapseSidebar: 'Collapse sidebar',
         expandSidebar: 'Expand sidebar',

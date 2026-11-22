@@ -13,6 +13,8 @@ import (
 // 每个定义只负责把所属领域的既有解析/默认值/序列化函数接入 Registry，
 // 避免 SettingService 再通过全局 switch 了解所有配置类型。
 var defaultSettingRegistry = MustNewRegistry(
+	Definition{Key: "personal_menu_config", Normalize: settingsstorefront.NormalizePersonalMenuJSON, Effects: []Effect{EffectInvalidatePublicConfigCache}},
+	Definition{Key: constants.SettingKeyInvoiceConfig, Effects: []Effect{EffectInvalidatePublicConfigCache}},
 	Definition{
 		Key:       constants.SettingKeyDashboardConfig,
 		Normalize: settingsstorefront.NormalizeDashboardSettingJSON,

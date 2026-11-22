@@ -39,7 +39,9 @@ export function useProductLabels() {
   }
 
   const getFulfillmentTypeLabel = (fulfillmentType: string) => {
-    return fulfillmentType === 'auto' ? t('products.fulfillmentType.auto') : t('products.fulfillmentType.manual')
+    return fulfillmentType === 'auto' || fulfillmentType === 'upstream'
+      ? t('products.fulfillmentType.auto')
+      : t('products.fulfillmentType.manual')
   }
 
   const getStockBadgeVariant = (status: string): 'info' | 'warning' | 'destructive' | 'success' => {

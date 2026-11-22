@@ -128,6 +128,7 @@ func normalizeSiteContact(raw interface{}) map[string]interface{} {
 	result := map[string]interface{}{
 		"telegram": "",
 		"whatsapp": "",
+		"wechat":   []string{},
 	}
 	contactMap, ok := raw.(map[string]interface{})
 	if !ok {
@@ -135,6 +136,38 @@ func normalizeSiteContact(raw interface{}) map[string]interface{} {
 	}
 	result["telegram"] = normalizeSettingText(contactMap["telegram"])
 	result["whatsapp"] = normalizeSettingText(contactMap["whatsapp"])
+	result["wechat"] = normalizeWechatAccounts(contactMap["wechat"])
+	return result
+}
+
+var wechatAccountPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// Only publish actual account IDs, never HTML, links, or empty editor rows.
+// A missing/empty list deliberately means no WeChat support is displayed.
+func normalizeWechatAccounts(raw interface{}) []string {
+	var candidates []interface{}
+	switch list := raw.(type) {
+	case []interface{}:
+		candidates = list
+	case []string:
+		for _, value := range list {
+			candidates = append(candidates, value)
+		}
+	}
+	result := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, value := range candidates {
+		account := normalizeSettingText(value)
+		key := strings.ToLower(account)
+		if !wechatAccountPattern.MatchString(account) || seen[key] {
+			continue
+		}
+		seen[key] = true
+		result = append(result, account)
+		if len(result) == 20 {
+			break
+		}
+	}
 	return result
 }
 
@@ -146,6 +179,7 @@ func normalizeSiteBrand(raw interface{}) map[string]interface{} {
 		"site_icon":        "",
 		"site_logo":        "",
 		"site_description": normalizeSiteLocalizedField(nil),
+		"redemption_url":   "",
 	}
 	brandMap, ok := raw.(map[string]interface{})
 	if !ok {
@@ -156,8 +190,17 @@ func normalizeSiteBrand(raw interface{}) map[string]interface{} {
 	result["site_icon"] = normalizeSettingText(brandMap["site_icon"])
 	// 未配置 Logo 时保留空字符串，让前台继续使用各主题原有的 fallback 行为。
 	result["site_logo"] = normalizeSettingText(brandMap["site_logo"])
+	result["redemption_url"] = normalizeSiteURL(brandMap["redemption_url"])
 	result["site_description"] = normalizeSiteLocalizedField(brandMap["site_description"])
 	return result
+}
+
+func normalizeSiteURL(raw interface{}) string {
+	value := strings.TrimSpace(normalizeSettingText(raw))
+	if value == "" || !strings.HasPrefix(strings.ToLower(value), "https://") {
+		return ""
+	}
+	return strings.TrimRight(value, "/")
 }
 
 func normalizeSiteLocalizedBlock(raw interface{}, fields []string) map[string]interface{} {

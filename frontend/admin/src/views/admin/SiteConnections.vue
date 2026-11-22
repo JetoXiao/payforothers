@@ -45,6 +45,20 @@ const form = reactive({
 })
 const reapplyingId = ref<number | null>(null)
 
+const applyAutninePreset = () => {
+  form.name = 'Autnine'
+  form.base_url = 'https://autnine.com'
+  form.protocol = 'dujiao-next'
+  form.callback_url = `${window.location.origin}/api/v1/upstream/callback`
+  form.retry_max = 5
+  form.retry_intervals = '30,60,300'
+  form.exchange_rate = 1
+  form.price_markup_percent = 0
+  form.price_rounding_mode = 'none'
+  form.auto_sync_price = 'false'
+  notifySuccess(t('siteConnections.autninePreset.applied'))
+}
+
 const siteConnectionSchema = {
   name: [rules.required()],
   base_url: [rules.required(), rules.url()],
@@ -373,6 +387,18 @@ onMounted(() => {
         </DialogHeader>
 
         <form class="space-y-6" @submit.prevent="handleSubmit">
+          <div
+            v-if="!isEditing"
+            class="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p class="text-sm font-medium text-indigo-950">{{ t('siteConnections.autninePreset.title') }}</p>
+              <p class="mt-1 text-xs leading-5 text-indigo-800">{{ t('siteConnections.autninePreset.description') }}</p>
+            </div>
+            <Button type="button" variant="outline" class="shrink-0 bg-white" @click="applyAutninePreset">
+              {{ t('siteConnections.autninePreset.action') }}
+            </Button>
+          </div>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="md:col-span-2">
               <label class="mb-1.5 block text-xs font-medium text-muted-foreground">{{ t('siteConnections.form.name') }}</label>

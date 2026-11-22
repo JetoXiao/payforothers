@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteName": "Dujiao-Next",
+    "siteName": "GptPayNow",
     "loading": "載入中...",
     "error": "錯誤",
     "success": "成功",
@@ -49,7 +49,15 @@
     "products": "商品中心",
     "blog": "部落格",
     "notice": "公告",
-    "about": "關於"
+    "about": "關於",
+    "tutorial": "充值教程",
+    "redemption": "卡密兌換"
+  },
+  "tutorial": {
+    "backHome":"返回首頁","title":"ChatGPT 充值與兌換教程","subtitle":"從購買前檢查、套餐選擇到卡密兌換和售後處理，一篇教程說明完整流程。具體可用範圍以商品詳情和訂單頁面為準。","updated":"適用於目前商品流程","readTime":"閱讀約 5 分鐘","contents":"教程目錄","chooseProduct":"返回首頁選購",
+    "contentsItems":{"before":"購買前須知","choose":"如何選購","purchase":"下單流程","redeem":"兌換與確認","troubleshoot":"常見問題","aftercare":"售後規則"},
+    "sections":{"before":{"title":"購買前須知","intro":"請在付款前確認帳號和商品條件。充值類商品的可用地區、目前訂閱狀態和兌換方式可能不同。"},"choose":{"title":"如何選擇套餐","intro":"按實際使用強度選擇，先確認目前帳號狀態，再決定 Go、Plus 或 Pro。"},"purchase":{"title":"選購與下單流程","intro":"商品詳情頁會展示價格、規格、交付方式和目前庫存；請以訂單頁資訊為準。"},"redeem":{"title":"兌換與到帳確認","intro":"卡密類商品由你在自己的帳號中完成兌換。我們不會要求你提供 ChatGPT 密碼、Cookie、Session Token 或驗證碼。","note":"如果商品頁面寫明需要人工處理，請只按訂單頁面提交必要的非登入資訊；不要在聊天工具中發送密碼、驗證碼或恢復碼。"},"troubleshoot":{"title":"常見問題排查"},"aftercare":{"title":"售後規則","intro":"售後以訂單頁面和商品詳情的具體說明為準。遇到問題時保留訂單號、付款憑證和頁面提示，便於快速處理。"}},
+    "items":{"before":{"account":"準備一個可以正常登入的 ChatGPT 帳號。","status":"確認帳號目前沒有不相容的有效訂閱；已有訂閱時不要直接購買不支援覆蓋的卡密。","region":"確認商品標註的地區、渠道和帳號條件與你的帳號匹配。","noCredentials":"不要向任何人提供密碼、Cookie、Session Token、短信驗證碼或 2FA 恢復碼。"},"choose":{"goTitle":"Go","goText":"適合輕量使用和預算有限的情境，先確認商品頁面的地區與兌換條件。","plusTitle":"Plus","plusText":"適合日常寫作、學習、辦公和常規程式碼使用。","proTitle":"Pro","proText":"適合高頻使用、重度研究、長任務和更高用量需求，購買前確認對應倍率與限制。"},"purchase":{"one":"打開首頁，查看商品標題、價格、規格、交付方式和售後說明。","two":"選擇與你的帳號狀態匹配的商品，核對地區、週期和是否支援覆蓋。","three":"點擊立即購買，填寫結算頁要求的資訊並完成付款。","four":"付款後保存訂單號；卡密自動交付或人工處理狀態以訂單頁為準。"},"redeem":{"one":"打開訂單詳情，複製卡密或查看官方兌換說明。","two":"在自己的 ChatGPT 帳號中按頁面提示完成兌換，不要把登入憑據交給第三方。","three":"兌換後刷新 ChatGPT，退出並重新登入，再到套餐/訂閱頁面核對權益。","four":"如果權益沒有立即顯示，先等待一段時間並按訂單頁指引重試，不要重複付款。"},"faq":{"failedQ":"卡密兌換失敗怎麼辦？","failedA":"先核對帳號狀態、地區和卡密是否完整；等待頁面提示的重試時間後再試。仍失敗時聯絡售後並提供訂單號和錯誤提示。","pendingQ":"付款後沒有立即收到卡密怎麼辦？","pendingA":"先到訂單查詢頁確認付款狀態和交付狀態。不要重複付款；超過頁面預計時間後再聯絡客服。","noPlanQ":"充值成功但沒有顯示權益怎麼辦？","noPlanA":"退出 ChatGPT 後重新登入，檢查套餐/訂閱頁面和訂單狀態。官方顯示可能存在延遲。","wrongRegionQ":"地區不匹配還能兌換嗎？","wrongRegionA":"不要強行嘗試。地區或渠道不匹配可能導致兌換失敗，先聯絡售後確認可用方案。"},"aftercare":{"one":"售後只處理訂單頁面和商品規則覆蓋的問題。","two":"卡密類商品建議購買後盡快兌換，不要長期囤貨。","three":"申請售後時提供訂單號、付款憑證、商品名稱和頁面錯誤提示。","four":"因用戶帳號狀態、地區不符、誤購或自行洩露卡密造成的問題，按商品詳情頁退款規則處理。"}}
   },
   "vault": {
     "hero": {
@@ -108,14 +116,18 @@
     "description": "你訪問的頁面可能已移動、刪除，或連結地址有誤。你可以繼續瀏覽 {site} 的其他內容。",
     "quickLinksTitle": "你可能會用到",
     "backHome": "返回首頁",
-    "backPrevious": "返回上一頁"
+    "backPrevious": "返回上一頁",
+    "tutorial": "充值教程",
+    "orders": "訂單查詢"
   },
   "home": {
     "hero": {
-      "title": "Dujiao-Next · D&N",
-      "subtitle": "專業的產品與服務提供商",
+      "title": "精選 GPT 方案，簡單擁有。",
+      "subtitle": "ChatGPT 訂閱服務，涵蓋日常問答、圖像創作、程式碼與深度研究。",
       "cta": "瀏覽商品",
-      "badge": "新一代數位商店"
+      "badge": "GPT PRODUCTS · DIGITAL SERVICES",
+      "visualFallback": "AI 產品空間",
+      "abilities": {"reasoningTitle":"深度推理","reasoningText":"拆解複雜問題，梳理思路與多步驟任務。","latestTitle":"研究與分析","latestText":"整理資料、提煉重點，輔助研究與決策。","imagesTitle":"圖像理解與創作","imagesText":"分析圖片、創作視覺內容，讓想法更直觀。","codeTitle":"程式設計協作","codeText":"從程式碼編寫、解釋到除錯，推進開發任務。","note":"能力展示僅供參考；可用模型、功能與額度以具體方案及官方帳戶頁面為準。"}
     },
     "stats": {
       "activeUsers": "活躍用戶",
@@ -124,10 +136,21 @@
       "support": "技術支援"
     },
     "featured": {
-      "title": "精選商品",
-      "description": "探索我們精心挑選的優質數位資產系列。",
+      "eyebrow": "GPT PRODUCTS",
+      "title": "GPT 訂閱方案",
+      "description": "選擇適合你的 GPT 訂閱方案。",
+      "countLabel": "款產品",
       "empty": "暫無商品",
       "viewAll": "查看全部商品"
+    },
+    "seoIntro": {"title":"ChatGPT 與 GPT 訂閱充值服務","description":"GptPayNow 提供 ChatGPT Plus、GPT Pro 等 GPT 訂閱方案，公開展示套餐價格、規格、購買須知與交付說明。用戶可線上選購、完成付款並查詢訂單狀態。","scope":"購買前請閱讀商品詳情與 ChatGPT 充值教程；可用地區、帳戶條件、模型功能與服務週期以商品頁面及官方帳戶頁面為準。","keywords":"ChatGPT代充, ChatGPT充值, GPT Plus充值, GPT Pro充值, AI訂閱服務"},
+    "trust": {
+      "selectionTitle": "專注 GPT",
+      "selectionDescription": "圍繞 ChatGPT 的訂閱方案，清晰選擇、快速交付。",
+      "orderTitle": "訂單清晰可查",
+      "orderDescription": "付款、訂單與交付狀態都可隨時查詢。",
+      "supportTitle": "售後支援",
+      "supportDescription": "遇到問題時，我們會及時跟進處理。"
     },
     "cta": {
       "title": "準備好開始了嗎？",
@@ -216,7 +239,9 @@
     "addCartStockExceeded": "該規格庫存不足，最多可購買 {count} 件",
     "addCartStockExceededWithCart": "該規格庫存不足，最多可購買 {count} 件（購物車中已有 {cartCount} 件）",
     "addCartLimitExceeded": "當前商品單次最多可購買 {count} 件",
-    "addCartLimitExceededWithCart": "當前商品單次最多可購買 {count} 件（購物車中已有 {cartCount} 件）"
+    "addCartLimitExceededWithCart": "當前商品單次最多可購買 {count} 件（購物車中已有 {cartCount} 件）",
+    "purchaseGuideTitle":"購買說明",
+    "purchaseGuide":{"beforeTitle":"購買前確認","beforeText":"確認地區、週期及帳戶目前訂閱狀態；不同規格不能任意互換。","deliveryTitle":"交付與兌換","deliveryText":"付款後以訂單頁狀態為準，卡密請在自己的 ChatGPT 帳戶依官方提示兌換。","accountTitle":"帳戶安全","accountText":"我們不會要求 ChatGPT 密碼、Cookie、Session Token、驗證碼或復原碼。","supportTitle":"售後處理","supportText":"遇到兌換失敗、錯發或未到帳，請保留訂單號及去識別化截圖提交售後。"}
   },
   "quickBuy": {
     "title": "快速購買",
@@ -259,8 +284,8 @@
   },
   "about": {
     "title": "關於我們",
-    "subtitle": "了解Dujiao-Next",
-    "introduction": "Dujiao-Next（D&N）是一家專業的線上工作室，致力於為客戶提供優質的產品和服務。我們以創新、專業、高效為核心價值觀，不斷追求卓越，為客戶創造價值。",
+    "subtitle": "了解 GptPayNow",
+    "introduction": "GptPayNow 專注於提供清晰、可靠的 ChatGPT 訂閱與數位服務。",
     "ourServices": "我們的服務",
     "service1": "優質商品推薦與銷售",
     "service2": "專業的售前諮詢服務",
@@ -288,6 +313,7 @@
     "me": "我的"
   },
   "personalCenter": {
+    "invoice":{"title":"發票資訊","subtitle":"維護多個開票抬頭，申請開票時選擇對應資訊。","add":"新增開票資訊","empty":"暫無開票資訊","default":"預設","name":"發票抬頭","taxpayerId":"統一編號／稅號","address":"登記地址","phone":"登記電話","bankName":"開戶行","bankAccount":"銀行帳號","email":"接收發票信箱","save":"儲存"},
     "title": "個人中心",
     "subtitle": "管理帳號資料、安全設定與最近訂單",
     "tabs": {
@@ -1148,6 +1174,7 @@
     "minPurchaseNotMet": "該商品單次下單至少需購買 {count} 件"
   },
   "checkout": {
+    "invoice":{"title":"申請發票","hint":"商品標價為未含稅價；開票後由人工處理並寄送至預留信箱。","selectProfile":"選擇開票資訊","manageHint":"請先在個人中心維護企業／個人抬頭、稅號、地址電話、開戶行帳號及信箱。","manage":"前往個人中心維護","pendingNotice":"提交後預計 1–2 個工作日處理，已開票訂單不可重複申請。","tax":"開票稅額"},
     "title": "訂單結算",
     "subtitle": "確認訂單資訊並提交",
     "empty": "購物車為空",
@@ -1286,6 +1313,7 @@
     "changeMethod": "更換支付方式",
     "refreshStatus": "刷新訂單狀態",
     "pollingHint": "正在檢查支付狀態...",
+    "upstreamFulfillmentHint": "付款成功後，系統會自動準備交付內容，可能需要短暫處理。訂單詳情頁會自動更新，無需手動刷新，請勿重複付款。",
     "selected": "已選擇",
     "redirectOpened": "支付頁面已在新視窗打開",
     "redirectOpenedTelegram": "支付連結已開啟，請完成支付後返回目前頁面刷新狀態",
@@ -1683,11 +1711,14 @@
       "delivered": "已交付"
     },
     "fulfillmentCopy": "複製內容",
+    "redemptionUrl": "兌換網址",
+    "redemptionCode": "兌換卡密",
     "fulfillmentCopied": "已複製",
     "fulfillmentDownload": "下載交付內容",
     "fulfillmentTotalLines": "共 {count} 條交付內容",
     "fulfillmentDownloading": "下載中...",
-    "fulfillmentTruncatedHint": "當前僅顯示前 100 條預覽，請下載獲取完整交付內容"
+    "fulfillmentTruncatedHint": "當前僅顯示前 100 條預覽，請下載獲取完整交付內容",
+    "autoFulfillmentProcessing": "付款已確認，正在自動採購並準備兌換卡密。頁面會自動更新，無需手動刷新，請勿重複下單。"
   },
   "guestOrders": {
     "title": "遊客訂單查詢",

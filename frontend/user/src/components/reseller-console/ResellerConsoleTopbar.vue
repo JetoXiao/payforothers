@@ -15,8 +15,8 @@
         </Button>
 
         <RouterLink to="/" class="group relative hidden shrink-0 sm:block" :title="brandSiteName">
-          <img v-if="brandLogo" :src="brandLogo" :alt="brandSiteName" class="h-7 max-w-[150px] object-contain" />
-          <span v-else class="text-base font-black text-foreground">{{ brandSiteName }}</span>
+          <img :src="brandLogo" :alt="brandSiteName" class="h-7 max-w-[150px] object-contain" />
+          <span class="text-base font-black text-foreground">{{ brandSiteName }}</span>
         </RouterLink>
 
         <span class="hidden h-5 w-px shrink-0 bg-border sm:block"></span>
@@ -228,12 +228,12 @@ const currentLocaleLabel = computed(() => {
 
 const brandSiteName = computed(() => {
   const text = String(appStore.config?.brand?.site_name || '').trim()
-  return text !== '' ? text : 'Dujiao-Next'
+  return text !== '' ? text : 'GptPayNow'
 })
 
 const brandLogo = computed(() => {
   const raw = String(appStore.config?.brand?.site_logo || '').trim()
-  return raw ? getImageUrl(raw) : ''
+  return raw ? getImageUrl(raw) : '/gptpaynow.svg'
 })
 
 const isActive = (path: string) => {

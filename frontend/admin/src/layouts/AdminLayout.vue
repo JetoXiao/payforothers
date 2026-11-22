@@ -53,6 +53,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { RefreshCw } from 'lucide-vue-next'
 import SystemUpdateDialog from '@/components/SystemUpdateDialog.vue'
+import OrderVoiceControl from '@/components/OrderVoiceControl.vue'
 import { useAdminAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
@@ -173,6 +174,12 @@ const navGroups = computed<NavGroup[]>(() => {
           icon: ListOrdered,
           permission: 'GET:/admin/orders',
         },
+          {
+            label: '发票处理',
+            to: '/invoices',
+            icon: ReceiptText,
+            permission: 'GET:/admin/invoices',
+          },
         {
           label: t('admin.navItems.orderRiskControl'),
           to: '/order-risk-control',
@@ -838,7 +845,7 @@ onBeforeUnmount(() => {
         <!-- Collapse toggle button -->
         <div class="border-t border-border">
           <div v-if="!sidebarCollapsed" class="px-6 py-3 text-[11px] text-muted-foreground space-y-1">
-            <p>© {{ new Date().getFullYear() }} Dujiao-Next <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
+            <p>© {{ new Date().getFullYear() }} GptPayNow <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
             <a
               href="https://github.com/dujiao-next"
               target="_blank"
@@ -927,7 +934,7 @@ onBeforeUnmount(() => {
             </div>
           </nav>
           <div class="px-6 py-4 border-t border-border text-[11px] text-muted-foreground space-y-1">
-            <p>© {{ new Date().getFullYear() }} Dujiao-Next <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
+            <p>© {{ new Date().getFullYear() }} GptPayNow <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
           </div>
         </SheetContent>
       </Sheet>
@@ -951,6 +958,7 @@ onBeforeUnmount(() => {
             <div class="text-sm text-muted-foreground hidden sm:block">{{ t('admin.layout.workspace') }}</div>
           </div>
           <div class="flex items-center gap-2">
+            <OrderVoiceControl />
             <Select
               :model-value="locale"
               @update:modelValue="(value) => { if (value) applyLocale(String(value)) }"

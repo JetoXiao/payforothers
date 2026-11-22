@@ -212,30 +212,31 @@ type WholesalePriceRequest struct {
 
 // CreateProductRequest 创建商品请求
 type CreateProductRequest struct {
-	CategoryID          uint                     `json:"category_id" binding:"required"`
-	Slug                string                   `json:"slug" binding:"required"`
-	SeoMetaJSON         map[string]interface{}   `json:"seo_meta"`
-	TitleJSON           map[string]interface{}   `json:"title" binding:"required"`
-	DescriptionJSON     map[string]interface{}   `json:"description"`
-	ContentJSON         map[string]interface{}   `json:"content"`
-	InstructionsJSON    map[string]interface{}   `json:"instructions"`
-	ManualFormSchema    map[string]interface{}   `json:"manual_form_schema"`
-	PriceAmount         float64                  `json:"price_amount" binding:"required"`
-	CostPriceAmount     float64                  `json:"cost_price_amount"`
-	WholesalePrices     *[]WholesalePriceRequest `json:"wholesale_prices"`
-	Images              []string                 `json:"images"`
-	Tags                []string                 `json:"tags"`
-	PurchaseType        string                   `json:"purchase_type"`
-	MinPurchaseQuantity *int                     `json:"min_purchase_quantity"`
-	MaxPurchaseQuantity *int                     `json:"max_purchase_quantity"`
-	StockDisplayMode    string                   `json:"stock_display_mode"`
-	FulfillmentType     string                   `json:"fulfillment_type"`
-	ManualStockTotal    *int                     `json:"manual_stock_total"`
-	SKUs                []ProductSKURequest      `json:"skus"`
-	PaymentChannelIDs   []uint                   `json:"payment_channel_ids"`
-	IsAffiliateEnabled  *bool                    `json:"is_affiliate_enabled"`
-	IsActive            *bool                    `json:"is_active"`
-	SortOrder           int                      `json:"sort_order"`
+	LocalManualFulfillment *bool                    `json:"local_manual_fulfillment"`
+	CategoryID             uint                     `json:"category_id" binding:"required"`
+	Slug                   string                   `json:"slug" binding:"required"`
+	SeoMetaJSON            map[string]interface{}   `json:"seo_meta"`
+	TitleJSON              map[string]interface{}   `json:"title" binding:"required"`
+	DescriptionJSON        map[string]interface{}   `json:"description"`
+	ContentJSON            map[string]interface{}   `json:"content"`
+	InstructionsJSON       map[string]interface{}   `json:"instructions"`
+	ManualFormSchema       map[string]interface{}   `json:"manual_form_schema"`
+	PriceAmount            float64                  `json:"price_amount" binding:"required"`
+	CostPriceAmount        float64                  `json:"cost_price_amount"`
+	WholesalePrices        *[]WholesalePriceRequest `json:"wholesale_prices"`
+	Images                 []string                 `json:"images"`
+	Tags                   []string                 `json:"tags"`
+	PurchaseType           string                   `json:"purchase_type"`
+	MinPurchaseQuantity    *int                     `json:"min_purchase_quantity"`
+	MaxPurchaseQuantity    *int                     `json:"max_purchase_quantity"`
+	StockDisplayMode       string                   `json:"stock_display_mode"`
+	FulfillmentType        string                   `json:"fulfillment_type"`
+	ManualStockTotal       *int                     `json:"manual_stock_total"`
+	SKUs                   []ProductSKURequest      `json:"skus"`
+	PaymentChannelIDs      []uint                   `json:"payment_channel_ids"`
+	IsAffiliateEnabled     *bool                    `json:"is_affiliate_enabled"`
+	IsActive               *bool                    `json:"is_active"`
+	SortOrder              int                      `json:"sort_order"`
 }
 
 // toWholesalePriceInputs 透传「是否提供」语义：请求未携带 wholesale_prices 时返回 nil
@@ -285,30 +286,31 @@ func (h *AdminProductHandler) CreateProduct(c *gin.Context) {
 	}
 
 	product, err := h.writer.Create(productwrite.CreateProductInput{
-		CategoryID:           req.CategoryID,
-		Slug:                 req.Slug,
-		SeoMetaJSON:          req.SeoMetaJSON,
-		TitleJSON:            req.TitleJSON,
-		DescriptionJSON:      req.DescriptionJSON,
-		ContentJSON:          req.ContentJSON,
-		InstructionsJSON:     req.InstructionsJSON,
-		ManualFormSchemaJSON: req.ManualFormSchema,
-		PriceAmount:          decimal.NewFromFloat(req.PriceAmount),
-		CostPriceAmount:      decimal.NewFromFloat(req.CostPriceAmount),
-		WholesalePrices:      toWholesalePriceInputs(req.WholesalePrices),
-		Images:               req.Images,
-		Tags:                 req.Tags,
-		PurchaseType:         req.PurchaseType,
-		MinPurchaseQuantity:  req.MinPurchaseQuantity,
-		MaxPurchaseQuantity:  req.MaxPurchaseQuantity,
-		StockDisplayMode:     req.StockDisplayMode,
-		FulfillmentType:      req.FulfillmentType,
-		ManualStockTotal:     req.ManualStockTotal,
-		SKUs:                 toProductSKUInputs(req.SKUs),
-		PaymentChannelIDs:    req.PaymentChannelIDs,
-		IsAffiliateEnabled:   req.IsAffiliateEnabled,
-		IsActive:             req.IsActive,
-		SortOrder:            req.SortOrder,
+		CategoryID:             req.CategoryID,
+		Slug:                   req.Slug,
+		SeoMetaJSON:            req.SeoMetaJSON,
+		TitleJSON:              req.TitleJSON,
+		DescriptionJSON:        req.DescriptionJSON,
+		ContentJSON:            req.ContentJSON,
+		InstructionsJSON:       req.InstructionsJSON,
+		ManualFormSchemaJSON:   req.ManualFormSchema,
+		PriceAmount:            decimal.NewFromFloat(req.PriceAmount),
+		CostPriceAmount:        decimal.NewFromFloat(req.CostPriceAmount),
+		WholesalePrices:        toWholesalePriceInputs(req.WholesalePrices),
+		Images:                 req.Images,
+		Tags:                   req.Tags,
+		PurchaseType:           req.PurchaseType,
+		MinPurchaseQuantity:    req.MinPurchaseQuantity,
+		MaxPurchaseQuantity:    req.MaxPurchaseQuantity,
+		StockDisplayMode:       req.StockDisplayMode,
+		FulfillmentType:        req.FulfillmentType,
+		LocalManualFulfillment: req.LocalManualFulfillment,
+		ManualStockTotal:       req.ManualStockTotal,
+		SKUs:                   toProductSKUInputs(req.SKUs),
+		PaymentChannelIDs:      req.PaymentChannelIDs,
+		IsAffiliateEnabled:     req.IsAffiliateEnabled,
+		IsActive:               req.IsActive,
+		SortOrder:              req.SortOrder,
 	})
 	if err != nil {
 		if errors.Is(err, productcontract.ErrSlugExists) {
@@ -377,30 +379,31 @@ func (h *AdminProductHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	product, err := h.writer.Update(id, productwrite.CreateProductInput{
-		CategoryID:           req.CategoryID,
-		Slug:                 req.Slug,
-		SeoMetaJSON:          req.SeoMetaJSON,
-		TitleJSON:            req.TitleJSON,
-		DescriptionJSON:      req.DescriptionJSON,
-		ContentJSON:          req.ContentJSON,
-		InstructionsJSON:     req.InstructionsJSON,
-		ManualFormSchemaJSON: req.ManualFormSchema,
-		PriceAmount:          decimal.NewFromFloat(req.PriceAmount),
-		CostPriceAmount:      decimal.NewFromFloat(req.CostPriceAmount),
-		WholesalePrices:      toWholesalePriceInputs(req.WholesalePrices),
-		Images:               req.Images,
-		Tags:                 req.Tags,
-		PurchaseType:         req.PurchaseType,
-		MinPurchaseQuantity:  req.MinPurchaseQuantity,
-		MaxPurchaseQuantity:  req.MaxPurchaseQuantity,
-		StockDisplayMode:     req.StockDisplayMode,
-		FulfillmentType:      req.FulfillmentType,
-		ManualStockTotal:     req.ManualStockTotal,
-		SKUs:                 toProductSKUInputs(req.SKUs),
-		PaymentChannelIDs:    req.PaymentChannelIDs,
-		IsAffiliateEnabled:   req.IsAffiliateEnabled,
-		IsActive:             req.IsActive,
-		SortOrder:            req.SortOrder,
+		CategoryID:             req.CategoryID,
+		Slug:                   req.Slug,
+		SeoMetaJSON:            req.SeoMetaJSON,
+		TitleJSON:              req.TitleJSON,
+		DescriptionJSON:        req.DescriptionJSON,
+		ContentJSON:            req.ContentJSON,
+		InstructionsJSON:       req.InstructionsJSON,
+		ManualFormSchemaJSON:   req.ManualFormSchema,
+		PriceAmount:            decimal.NewFromFloat(req.PriceAmount),
+		CostPriceAmount:        decimal.NewFromFloat(req.CostPriceAmount),
+		WholesalePrices:        toWholesalePriceInputs(req.WholesalePrices),
+		Images:                 req.Images,
+		Tags:                   req.Tags,
+		PurchaseType:           req.PurchaseType,
+		MinPurchaseQuantity:    req.MinPurchaseQuantity,
+		MaxPurchaseQuantity:    req.MaxPurchaseQuantity,
+		StockDisplayMode:       req.StockDisplayMode,
+		FulfillmentType:        req.FulfillmentType,
+		LocalManualFulfillment: req.LocalManualFulfillment,
+		ManualStockTotal:       req.ManualStockTotal,
+		SKUs:                   toProductSKUInputs(req.SKUs),
+		PaymentChannelIDs:      req.PaymentChannelIDs,
+		IsAffiliateEnabled:     req.IsAffiliateEnabled,
+		IsActive:               req.IsActive,
+		SortOrder:              req.SortOrder,
 	})
 	if err != nil {
 		if errors.Is(err, productcontract.ErrNotFound) {
@@ -552,6 +555,7 @@ func (h *AdminProductHandler) applyUpstreamDisplayTypes(products []productdomain
 	var upstreamIDs []uint
 	idxMap := make(map[uint]int) // localProductID -> products slice index
 	for i := range products {
+		products[i].LocalManualFulfillment = products[i].IsMapped && products[i].FulfillmentType == constants.FulfillmentTypeManual
 		if products[i].FulfillmentType == constants.FulfillmentTypeUpstream {
 			upstreamIDs = append(upstreamIDs, products[i].ID)
 			idxMap[products[i].ID] = i

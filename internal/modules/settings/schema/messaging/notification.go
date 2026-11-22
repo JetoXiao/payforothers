@@ -68,6 +68,7 @@ type FeishuNotificationChannelSetting struct {
 
 // NotificationChannelsSetting 通知渠道集合
 type NotificationChannelsSetting struct {
+	WeCom    WeComNotificationSetting         `json:"wecom"`
 	Email    NotificationChannelSetting       `json:"email"`
 	Telegram NotificationChannelSetting       `json:"telegram"`
 	Feishu   FeishuNotificationChannelSetting `json:"feishu"`
@@ -130,6 +131,7 @@ type NotificationCenterSettingPatch struct {
 
 // NotificationChannelsPatch 通知渠道补丁
 type NotificationChannelsPatch struct {
+	WeCom    *WeComNotificationPatch         `json:"wecom"`
 	Email    *NotificationChannelPatch       `json:"email"`
 	Telegram *NotificationChannelPatch       `json:"telegram"`
 	Feishu   *FeishuNotificationChannelPatch `json:"feishu"`
@@ -272,6 +274,7 @@ func NotificationCenterDefaultSetting() NotificationCenterSetting {
 
 // NormalizeNotificationCenterSetting 归一化通知中心配置
 func NormalizeNotificationCenterSetting(setting NotificationCenterSetting) NotificationCenterSetting {
+	setting.Channels.WeCom.Webhook = strings.TrimSpace(setting.Channels.WeCom.Webhook)
 	setting.DefaultLocale = NormalizeNotificationLocale(setting.DefaultLocale)
 	setting.Channels.Email.Recipients = normalizeEmailRecipients(setting.Channels.Email.Recipients)
 	setting.Channels.Telegram.Recipients = normalizeTelegramRecipients(setting.Channels.Telegram.Recipients)
@@ -291,6 +294,11 @@ func NormalizeNotificationCenterSetting(setting NotificationCenterSetting) Notif
 // ValidateNotificationCenterSetting 校验通知中心配置
 func ValidateNotificationCenterSetting(setting NotificationCenterSetting) error {
 	normalized := NormalizeNotificationCenterSetting(setting)
+	if normalized.Channels.WeCom.Enabled || normalized.Channels.WeCom.Webhook != "" {
+		if err := ValidateWeComWebhook(normalized.Channels.WeCom.Webhook); err != nil {
+			return err
+		}
+	}
 	if _, ok := notificationSupportedLocales[normalized.DefaultLocale]; !ok {
 		return fmt.Errorf("%w: 默认语言不合法", ErrNotificationConfigInvalid)
 	}
@@ -358,6 +366,10 @@ func NotificationCenterSettingToMap(setting NotificationCenterSetting) map[strin
 	return map[string]interface{}{
 		"default_locale": normalized.DefaultLocale,
 		"channels": map[string]interface{}{
+			"wecom": map[string]interface{}{
+				"enabled": normalized.Channels.WeCom.Enabled,
+				"webhook": normalized.Channels.WeCom.Webhook,
+			},
 			"email": map[string]interface{}{
 				"enabled":    normalized.Channels.Email.Enabled,
 				"recipients": settingsvalue.CloneStringSlice(normalized.Channels.Email.Recipients),
@@ -403,6 +415,11 @@ func MaskNotificationCenterSettingForAdmin(setting NotificationCenterSetting) js
 		return result
 	}
 	feishu := settingsvalue.ToStringAnyMap(channels["feishu"])
+	wecom := settingsvalue.ToStringAnyMap(channels["wecom"])
+	if wecom != nil {
+		wecom["webhook"] = ""
+		wecom["has_webhook"] = normalized.Channels.WeCom.Webhook != ""
+	}
 	if feishu == nil {
 		return result
 	}
@@ -433,6 +450,17 @@ func ApplyNotificationCenterSettingPatch(current NotificationCenterSetting, patc
 		next.IgnoredProductIDs = settingsvalue.CloneUintSlice(*patch.IgnoredProductIDs)
 	}
 	if patch.Channels != nil {
+		if p := patch.Channels.WeCom; p != nil {
+			if p.Enabled != nil {
+				next.Channels.WeCom.Enabled = *p.Enabled
+			}
+			if p.Webhook != nil && strings.TrimSpace(*p.Webhook) != "" {
+				next.Channels.WeCom.Webhook = strings.TrimSpace(*p.Webhook)
+			}
+			if p.ClearWebhook {
+				next.Channels.WeCom = WeComNotificationSetting{}
+			}
+		}
 		if patch.Channels.Email != nil {
 			if patch.Channels.Email.Enabled != nil {
 				next.Channels.Email.Enabled = *patch.Channels.Email.Enabled
@@ -564,6 +592,10 @@ func DecodeNotificationCenterSetting(raw jsonmap.JSON, fallback NotificationCent
 	next.IgnoredProductIDs = settingsvalue.ReadUintList(raw, "ignored_product_ids", next.IgnoredProductIDs)
 
 	if channelsMap := settingsvalue.ToStringAnyMap(raw["channels"]); channelsMap != nil {
+		if w := settingsvalue.ToStringAnyMap(channelsMap["wecom"]); w != nil {
+			next.Channels.WeCom.Enabled = settingsvalue.ReadBool(w, "enabled", next.Channels.WeCom.Enabled)
+			next.Channels.WeCom.Webhook = settingsvalue.ReadString(w, "webhook", next.Channels.WeCom.Webhook)
+		}
 		if emailMap := settingsvalue.ToStringAnyMap(channelsMap["email"]); emailMap != nil {
 			next.Channels.Email.Enabled = settingsvalue.ReadBool(emailMap, "enabled", next.Channels.Email.Enabled)
 			next.Channels.Email.Recipients = settingsvalue.ReadStringList(emailMap, "recipients", next.Channels.Email.Recipients)
@@ -603,6 +635,7 @@ func DecodeNotificationCenterSetting(raw jsonmap.JSON, fallback NotificationCent
 		}
 	}
 	if !legacyEnabled {
+		next.Channels.WeCom.Enabled = false
 		next.Channels.Email.Enabled = false
 		next.Channels.Telegram.Enabled = false
 		next.Channels.Feishu.Enabled = false

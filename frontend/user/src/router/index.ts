@@ -9,7 +9,6 @@ import { GOOGLE_REDIRECT_FRONTEND_CALLBACK_PATH } from '../utils/googleRedirect'
 type RouteComponentLoader = () => Promise<unknown>
 
 const homeViewLoader: RouteComponentLoader = () => import('../views/Home.vue')
-const productsViewLoader: RouteComponentLoader = () => import('../views/Products.vue')
 const productDetailViewLoader: RouteComponentLoader = () => import('../views/ProductDetail.vue')
 const cartViewLoader: RouteComponentLoader = () => import('../views/Cart.vue')
 const checkoutViewLoader: RouteComponentLoader = () => import('../views/Checkout.vue')
@@ -17,10 +16,10 @@ const paymentViewLoader: RouteComponentLoader = () => import('../views/Payment.v
 const blogViewLoader: RouteComponentLoader = () => import('../views/Blog.vue')
 const noticeViewLoader: RouteComponentLoader = () => import('../views/Notice.vue')
 const loginViewLoader: RouteComponentLoader = () => import('../views/auth/Login.vue')
+const tutorialViewLoader: RouteComponentLoader = () => import('../views/Tutorial.vue')
 const resellerLayoutLoader: RouteComponentLoader = () => import('../views/reseller/ResellerConsoleLayout.vue')
 
 const routeWarmupLoaders: RouteComponentLoader[] = [
-    productsViewLoader,
     productDetailViewLoader,
     cartViewLoader,
     checkoutViewLoader,
@@ -119,28 +118,21 @@ const router = createRouter({
         },
         {
             path: '/products',
-            name: 'products',
-            component: () => {
-                const appStore = useAppStore()
-                return appStore.config?.template_mode === 'list'
-                    ? templateView('Home', homeViewLoader)()
-                    : templateView('Products', productsViewLoader)()
-            },
+            redirect: '/',
         },
         {
             path: '/categories/:slug',
-            name: 'category-products',
-            component: () => {
-                const appStore = useAppStore()
-                return appStore.config?.template_mode === 'list'
-                    ? templateView('Home', homeViewLoader)()
-                    : templateView('Products', productsViewLoader)()
-            },
+            redirect: '/',
         },
         {
             path: '/products/:slug',
             name: 'product-detail',
             component: templateView('ProductDetail', productDetailViewLoader),
+        },
+        {
+            path: '/tutorials/chatgpt-recharge',
+            name: 'chatgpt-recharge-tutorial',
+            component: templateView('Tutorial', tutorialViewLoader),
         },
         {
             path: '/cart',
@@ -260,8 +252,7 @@ const router = createRouter({
         },
         {
             path: '/blog',
-            name: 'blog',
-            component: templateView('Blog', blogViewLoader),
+            redirect: '/',
         },
         {
             path: '/blog/:slug',
@@ -270,13 +261,11 @@ const router = createRouter({
         },
         {
             path: '/notice',
-            name: 'notice',
-            component: templateView('Notice', noticeViewLoader),
+            redirect: '/',
         },
         {
             path: '/about',
-            name: 'about',
-            component: templateView('About', () => import('../views/About.vue')),
+            redirect: '/',
         },
         {
             path: '/terms',

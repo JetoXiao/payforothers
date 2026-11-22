@@ -109,6 +109,8 @@ func (v *publicProductView) toProductResp() productpresenter.Product {
 		PromotionRules:       v.PromotionRules,
 		MemberPrices:         v.MemberPrices,
 	}
+	// Keep customer-facing copy available even when a legacy mapped product has
+	// no localized text yet; the admin editor remains the source of truth.
 	return resp
 }
 

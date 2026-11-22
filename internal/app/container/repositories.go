@@ -21,6 +21,7 @@ import (
 	emailverificationstore "github.com/dujiao-next/internal/modules/identity/emailverification/infrastructure/gormstore"
 	externalidentitystore "github.com/dujiao-next/internal/modules/identity/externalidentity/infrastructure/gormstore"
 	userstore "github.com/dujiao-next/internal/modules/identity/user/infrastructure/gormstore"
+	invoicegormstore "github.com/dujiao-next/internal/modules/invoice/infrastructure/gormstore"
 	memberlevelgormstore "github.com/dujiao-next/internal/modules/memberlevel/infrastructure/gormstore"
 	notificationgormstore "github.com/dujiao-next/internal/modules/notification/infrastructure/gormstore"
 	ordergormstore "github.com/dujiao-next/internal/modules/order/infrastructure/gormstore"
@@ -82,5 +83,7 @@ func (c *Container) initRepositories() error {
 	c.MemberLevelRepo = memberlevelgormstore.NewLevelStore(db)
 	c.MemberLevelPriceRepo = memberlevelgormstore.NewPriceStore(db)
 	c.MemberLevelUserRepo = memberlevelgormstore.NewUserStore(db)
+	c.InvoiceStore = invoicegormstore.New(db)
+	c.InvoiceRequestStore = invoicegormstore.NewRequestStore(db)
 	return nil
 }

@@ -1,0 +1,26 @@
+# GptPayNow
+
+> GptPayNow 是面向中文用户的 AI 数字产品商城，当前主要提供 ChatGPT / GPT 订阅充值服务。
+
+## 公开页面
+
+- 首页：https://www.gptpaynow.com/
+- GPT Plus：https://www.gptpaynow.com/products/gptplus
+- GPT Pro 100：https://www.gptpaynow.com/products/gptpro100
+- GPT Pro 200：https://www.gptpaynow.com/products/gptpro200
+- GPT Pro 500：https://www.gptpaynow.com/products/gptpro500
+- ChatGPT 充值教程：https://www.gptpaynow.com/tutorials/chatgpt-recharge
+- 订单查询：https://www.gptpaynow.com/guest/orders
+- 服务条款：https://www.gptpaynow.com/terms
+- 隐私政策：https://www.gptpaynow.com/privacy
+
+## 服务说明
+
+GptPayNow 的公开商品页面会说明 ChatGPT / GPT 套餐、地区、周期、价格、规格、交付方式和售后规则。用户可以从首页进入商品详情、下单和订单查询页面。ChatGPT 充值教程会说明购买前确认、选购、支付、兑换、常见问题和售后流程。
+
+站点内容涉及 GPT、ChatGPT Plus、ChatGPT Pro、AI 订阅充值等关键词。Claude 相关内容仅在教程或商品实际上线时以页面标注为准；请以 GptPayNow 当前公开商品页面为准，不将本文件视为对未上架套餐的承诺。
+
+## 抓取入口
+
+- Sitemap：https://www.gptpaynow.com/sitemap.xml
+- Robots：https://www.gptpaynow.com/robots.txt

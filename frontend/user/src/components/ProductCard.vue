@@ -1,185 +1,103 @@
 <template>
-  <Card
-    class="group relative overflow-hidden flex flex-col h-full rounded-2xl transition-all theme-slide-up"
-    :class="isSoldOut(product)
-      ? 'cursor-default opacity-85 grayscale-[0.25] saturate-50 border-destructive/30'
-      : 'cursor-pointer hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg'"
+  <article
+    class="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-200 theme-slide-up"
+    :class="[accent || accentForProduct, isSoldOut(product) ? 'opacity-70 grayscale-[0.2]' : 'hover:-translate-y-1 hover:border-hairline-strong hover:shadow-card']"
     :style="{ animationDelay: `${index * animationStep}ms` }"
     @click="$emit('click', product.slug)">
-    <!-- Image Area -->
-    <div class="aspect-[4/3] overflow-hidden bg-muted relative shrink-0">
-      <div
-        class="absolute inset-0 z-10 transition-colors duration-300"
-        :class="isSoldOut(product) ? 'bg-black/15' : 'bg-black/15 group-hover:bg-black/5'"
-      ></div>
+    <div class="flex items-center justify-between px-5 pt-5">
+      <div class="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl border bg-white/80 dark:bg-white/10">
       <img v-if="displayImageSrc && !imageErrored" :src="displayImageSrc"
         :alt="getLocalizedText(product.title)" loading="lazy" decoding="async"
-        class="w-full h-full object-cover transform transition-transform duration-700 ease-out"
-        :class="[
-          isSoldOut(product) ? 'grayscale brightness-75' : 'group-hover:scale-105',
-        ]"
+        class="h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-105"
         @error="handleImageError" />
       <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground" role="img"
         :aria-label="getLocalizedText(product.title)">
-        <ImageIcon class="w-8 h-8 md:w-12 md:h-12" :stroke-width="1.5" aria-hidden="true" />
+        <ImageIcon class="h-7 w-7" :stroke-width="1.5" aria-hidden="true" />
       </div>
-
-      <div v-if="isSoldOut(product)" class="absolute inset-0 z-20 bg-black/45"></div>
-      <Badge
-        v-if="isSoldOut(product)"
-        variant="destructive"
-        size="xs"
-        class="absolute left-2 top-2 md:left-4 md:top-4 z-30 tracking-wider shadow-sm"
-      >
-        {{ t('products.stockStatus.outOfStock') }}
-      </Badge>
-
-      <!-- Tags -->
-      <div v-if="!isSoldOut(product) && product.tags && product.tags.length > 0"
-        class="absolute top-2 right-2 md:top-4 md:right-4 z-20 flex flex-wrap gap-1 md:gap-2 justify-end">
-        <span v-for="(tag, tagIndex) in product.tags.slice(0, maxTags)" :key="tagIndex"
-          class="inline-flex items-center rounded-md border border-white/25 bg-black/55 px-2 md:px-3 py-0.5 md:py-1 text-xs font-medium text-white backdrop-blur-sm">
-          {{ tag }}
-        </span>
       </div>
+      <span v-if="!isSoldOut(product)" class="product-accent-dot" aria-hidden="true"></span>
     </div>
 
-    <!-- Content Area -->
-    <div class="p-3 md:p-4 relative z-20 flex flex-col flex-1">
-      <div v-if="product.category?.name" class="text-xs text-muted-foreground uppercase tracking-wider mb-1 md:mb-2 truncate">
-        {{ t('products.categoryLabel') }} · {{ getLocalizedText(product.category.name) }}
+    <div class="flex flex-1 flex-col px-5 pb-5 pt-5">
+      <div v-if="product.category?.name" class="mb-2 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {{ getLocalizedText(product.category.name) }}
       </div>
-      <h3 class="text-sm md:text-lg font-bold text-foreground mb-1 md:mb-2 transition-colors line-clamp-1">
+      <h3 class="line-clamp-2 text-[17px] font-semibold leading-tight text-foreground">
         {{ getLocalizedText(product.title) }}
       </h3>
-
-      <!-- Badges -->
-      <div class="mb-2 md:mb-3 flex flex-wrap items-center gap-1 md:gap-2">
-        <!-- Mobile: show only fulfillment type badge -->
-        <Badge
-          class="md:hidden"
-          size="xs"
-          :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'"
-        >
-          {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
-        </Badge>
-
-        <!-- Desktop: show all badges -->
-        <Badge
-          class="hidden md:inline-flex"
-          size="xs"
-          :variant="product.purchase_type === 'guest' ? 'warning' : 'success'"
-        >
-          <UserPlus v-if="product.purchase_type === 'guest'" class="h-3 w-3" />
-          <Lock v-else class="h-3 w-3" />
-          {{ getPurchaseTypeLabel(product.purchase_type) }}
-        </Badge>
-
-        <Badge
-          class="hidden md:inline-flex"
-          size="xs"
-          :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'"
-        >
-          <Zap v-if="product.fulfillment_type === 'auto'" class="h-3 w-3" />
-          <Pencil v-else class="h-3 w-3" />
-          {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
-        </Badge>
-
-        <Badge class="hidden md:inline-flex" size="xs" :variant="getStockBadgeVariant(product.stock_status)">
-          {{ getStockStatusLabel(product) }}
-        </Badge>
-      </div>
-
-      <p class="hidden md:block text-muted-foreground text-sm mb-6 line-clamp-2">
+      <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
         {{ getLocalizedText(product.description) }}
       </p>
 
-      <div class="flex items-center justify-between border-t pt-2 md:pt-4 mt-auto">
+      <div class="mt-auto flex items-end justify-between gap-3 border-t pt-5">
         <div class="flex flex-col">
-          <span class="hidden md:block text-xs text-muted-foreground uppercase tracking-wider">{{ t('products.price') }}</span>
+          <span class="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{{ t('products.price') }}</span>
           <span
             v-if="hasPromotionPrice(product)"
-            class="theme-price-sm theme-price-promotion"
+            class="theme-price-sm theme-price-promotion mt-1"
             :aria-label="t('products.promotionPriceAria', { price: formatPrice(getPromotionPriceAmount(product), siteCurrency) })"
           >
             {{ formatPrice(getPromotionPriceAmount(product), siteCurrency) }}
           </span>
           <span
             v-else
-            class="theme-price-sm"
+            class="theme-price-sm mt-1"
             :aria-label="t('products.priceAria', { price: formatPrice(product.price_amount, siteCurrency) })"
           >
             {{ formatPrice(product.price_amount, siteCurrency) }}
           </span>
           <div v-if="hasPromotionPrice(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
             <span
-              class="hidden md:inline text-xs text-muted-foreground opacity-80 line-through"
+              class="text-xs text-muted-foreground opacity-80 line-through"
               :aria-label="t('products.originalPriceAria', { price: formatPrice(product.price_amount, siteCurrency) })"
             >{{ formatPrice(product.price_amount, siteCurrency) }}</span>
-            <Badge variant="danger" size="xs">
-              {{ t('products.promotionTag') }}
-            </Badge>
+            <span class="text-[11px] font-medium text-muted-foreground">{{ t('products.promotionTag') }}</span>
           </div>
           <div v-else-if="hasWholesalePrices(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <Badge variant="success" size="xs">
-              {{ t('products.wholesaleTag') }}
-            </Badge>
+            <span class="text-[11px] font-medium text-muted-foreground">{{ t('products.wholesaleTag') }}</span>
           </div>
           <div v-else-if="hasPromotionRules(product)" class="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <Badge variant="warning" size="xs">
-              {{ t('products.promotionBadge') }}
-            </Badge>
+            <span class="text-[11px] font-medium text-muted-foreground">{{ t('products.promotionBadge') }}</span>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <!-- Quick buy cart button -->
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="icon"
-            class="w-8 h-8 md:w-9 md:h-9"
+            class="grid h-9 w-9 place-items-center rounded-xl border bg-card text-muted-foreground transition hover:border-hairline-strong hover:text-foreground"
             :aria-label="t('products.quickBuyAria')"
             :disabled="isSoldOut(product)"
             @click.stop="$emit('quickBuy', product)"
           >
-            <ShoppingCart class="h-4 w-4" />
-          </Button>
-          <!-- Desktop: view details -->
-          <span
-            class="hidden md:flex text-xs uppercase font-bold transition-colors items-center gap-1"
-            :class="isSoldOut(product)
-              ? 'text-destructive/90'
-              : 'text-muted-foreground group-hover:text-foreground'">
-            <ArrowRight class="w-4 h-4 transition-transform" :class="isSoldOut(product) ? '' : 'group-hover:translate-x-1'" />
+            <ArrowRight class="h-4 w-4" />
+          </button>
+          <span class="hidden items-center gap-1 text-xs font-semibold text-muted-foreground transition-colors group-hover:text-foreground md:flex">
+            {{ t('common.viewDetails') }} <ArrowRight class="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </span>
-          <!-- Mobile: arrow only -->
-          <ChevronRight class="md:hidden w-4 h-4 text-muted-foreground" />
         </div>
       </div>
     </div>
-  </Card>
+  </article>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed, ref, watch } from 'vue'
-import { ArrowRight, ChevronRight, Image as ImageIcon, Lock, Pencil, ShoppingCart, UserPlus, Zap } from 'lucide-vue-next'
+import { ArrowRight, Image as ImageIcon } from 'lucide-vue-next'
 import { getFirstImageUrl, getImageUrl } from '../utils/image'
 import { useLocalized, useProductLabels } from '../composables/useProduct'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 
 const props = withDefaults(defineProps<{
   product: any
   index?: number
   maxTags?: number
   animationStep?: number
+  accent?: string
 }>(), {
   index: 0,
   maxTags: 2,
   animationStep: 50,
+  accent: '',
 })
 
 defineEmits<{
@@ -189,7 +107,14 @@ defineEmits<{
 
 const { t } = useI18n()
 const { getLocalizedText, siteCurrency, formatPrice } = useLocalized()
-const { getPurchaseTypeLabel, getFulfillmentTypeLabel, getStockBadgeVariant, getStockStatusLabel, isSoldOut, hasPromotionPrice, getPromotionPriceAmount, hasPromotionRules, hasWholesalePrices } = useProductLabels()
+const { isSoldOut, hasPromotionPrice, getPromotionPriceAmount, hasPromotionRules, hasWholesalePrices } = useProductLabels()
+const accentForProduct = computed(() => {
+  const title = getLocalizedText(props.product?.title).toLowerCase()
+  if (title.includes('claude')) return 'accent-warm'
+  if (title.includes('gemini')) return 'accent-blue'
+  if (title.includes('codex')) return 'accent-violet'
+  return ['accent-teal', 'accent-blue', 'accent-violet'][(props.index ?? 0) % 3]
+})
 
 const imageErrored = ref(false)
 const attemptIdx = ref(0)
@@ -221,3 +146,18 @@ const handleImageError = () => {
   }
 }
 </script>
+
+<style scoped>
+.accent-teal, .accent-warm, .accent-blue, .accent-violet { position: relative; isolation: isolate; }
+.accent-teal::before, .accent-warm::before, .accent-blue::before, .accent-violet::before { content: ''; position:absolute; width:190px; height:190px; right:-70px; top:-80px; border-radius:999px; filter:blur(38px); opacity:.28; z-index:-1; transition:opacity .25s ease; }
+.accent-teal { --product-accent:#10a37f; --product-soft:rgba(16,163,127,.14); }
+.accent-warm { --product-accent:#d97757; --product-soft:rgba(217,119,87,.14); }
+.accent-blue { --product-accent:#4285f4; --product-soft:rgba(66,133,244,.14); }
+.accent-violet { --product-accent:#8b5cf6; --product-soft:rgba(139,92,246,.14); }
+.accent-teal::before { background:#10a37f; }
+.accent-warm::before { background:#d97757; }
+.accent-blue::before { background:#4285f4; }
+.accent-violet::before { background:#8b5cf6; }
+.accent-teal:hover::before, .accent-warm:hover::before, .accent-blue:hover::before, .accent-violet:hover::before { opacity:.42; }
+.product-accent-dot { width:9px; height:9px; border-radius:999px; background:var(--product-accent); box-shadow:0 0 0 5px var(--product-soft); }
+</style>

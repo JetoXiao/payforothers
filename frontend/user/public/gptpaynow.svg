@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">GptPayNow</title>
+  <desc id="desc">GptPayNow abstract G mark with a forward spark</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="52" x2="450" y2="458" gradientUnits="userSpaceOnUse"><stop stop-color="#111827"/><stop offset="1" stop-color="#070A12"/></linearGradient>
+    <linearGradient id="mark" x1="118" y1="100" x2="390" y2="414" gradientUnits="userSpaceOnUse"><stop stop-color="#67E8F9"/><stop offset=".52" stop-color="#22D3EE"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="128" fill="url(#bg)"/>
+  <circle cx="256" cy="254" r="176" fill="#22D3EE" opacity=".07"/>
+  <path d="M256 82c-98 0-178 80-178 178s80 178 178 178c49 0 94-20 126-52l-53-53c-19 20-45 32-73 32-58 0-105-47-105-105s47-105 105-105c34 0 65 16 84 42h-87v70h164V104h-70v50c-31-44-83-72-141-72Z" fill="url(#mark)" filter="url(#glow)"/>
+  <path d="m393 72 9 26 26 9-26 9-9 26-9-26-26-9 26-9 9-26Z" fill="#F0FDFF"/>
+  <path d="m417 138 5 14 14 5-14 5-5 14-5-14-14-5 14-5 5-14Z" fill="#A78BFA" opacity=".9"/>
+</svg>

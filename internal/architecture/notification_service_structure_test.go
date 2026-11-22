@@ -35,7 +35,7 @@ func TestNotificationImplementationLivesInBoundedContextDirectories(t *testing.T
 	}
 	assertDirectoryGoFileBudget(t, domainRoot, 1)
 	assertDirectoryGoFileBudget(t, contractRoot, 2)
-	assertDirectoryGoFileBudget(t, applicationRoot, 6)
+	assertDirectoryGoFileBudget(t, applicationRoot, 8)
 	assertDirectoryGoFileBudget(t, formatRoot, 6)
 	assertDirectoryGoFileBudget(t, storeRoot, 3)
 	assertDirectoryGoFileBudget(t, transportRoot, 3)

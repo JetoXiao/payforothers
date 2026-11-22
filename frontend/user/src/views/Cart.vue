@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
+  <div class="min-h-screen bg-background pb-16 pt-24 text-foreground">
+    <div class="container mx-auto max-w-7xl px-4 sm:px-6">
       <div class="mb-8">
-        <h1 class="mb-2 text-3xl font-black text-foreground">{{ t('cart.title') }}</h1>
+        <h1 class="mb-2 text-3xl font-semibold tracking-[-0.035em] text-foreground">{{ t('cart.title') }}</h1>
         <p class="text-sm text-muted-foreground">{{ t('cart.subtitle') }}</p>
       </div>
 
@@ -56,11 +56,11 @@
                         {{ item.purchaseType === 'guest' ? t('productPurchase.guest') : t('productPurchase.member') }}
                       </Badge>
                       <Badge
-                        :variant="item.fulfillmentType === 'auto' ? 'info' : 'neutral'"
+                        :variant="item.fulfillmentType === 'auto' || item.fulfillmentType === 'upstream' ? 'info' : 'neutral'"
                         size="xs"
                         class="uppercase tracking-wider"
                       >
-                        {{ item.fulfillmentType === 'auto' ? t('products.fulfillmentType.auto') : t('products.fulfillmentType.manual') }}
+                        {{ item.fulfillmentType === 'auto' || item.fulfillmentType === 'upstream' ? t('products.fulfillmentType.auto') : t('products.fulfillmentType.manual') }}
                       </Badge>
                     </div>
                   </div>

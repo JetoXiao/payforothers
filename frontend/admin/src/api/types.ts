@@ -52,6 +52,7 @@ export interface AdminWholesalePrice {
 }
 
 export interface AdminProduct {
+  local_manual_fulfillment?: boolean
   id: number
   category_id: number
   slug: string

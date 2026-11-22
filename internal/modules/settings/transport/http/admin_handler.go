@@ -6,6 +6,7 @@ import (
 	"github.com/dujiao-next/internal/cache"
 	"github.com/dujiao-next/internal/constants"
 	settingsapp "github.com/dujiao-next/internal/modules/settings/application"
+	settingsmessaging "github.com/dujiao-next/internal/modules/settings/schema/messaging"
 	ginutil "github.com/dujiao-next/internal/platform/http/ginutil"
 	"github.com/dujiao-next/internal/platform/http/response"
 	"github.com/dujiao-next/internal/shared/jsonmap"
@@ -51,6 +52,9 @@ func (h *AdminHandler) Get(c *gin.Context) {
 		return
 	}
 
+	if strings.TrimSpace(key) == constants.SettingKeyNotificationCenterConfig {
+		value = settingsmessaging.MaskNotificationCenterSettingForAdmin(settingsmessaging.DecodeNotificationCenterSetting(value, settingsmessaging.NotificationCenterDefaultSetting()))
+	}
 	response.Success(c, value)
 }
 
@@ -68,6 +72,10 @@ func (h *AdminHandler) Update(c *gin.Context) {
 			"google_auth_config must be updated through /admin/settings/google-auth",
 			nil,
 		)
+		return
+	}
+	if strings.TrimSpace(req.Key) == constants.SettingKeyNotificationCenterConfig {
+		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "notification_center_config must be updated through /admin/settings/notification-center", nil)
 		return
 	}
 

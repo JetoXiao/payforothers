@@ -88,15 +88,29 @@
         <div v-for="i in 3" :key="i" class="h-24 animate-pulse rounded-2xl border bg-muted"></div>
       </div>
 
+      <div v-if="!orderLoading && eligibleInvoiceOrders.length" class="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><p class="font-semibold">{{ t('invoice.applications') }}</p><p class="mt-1 text-xs text-muted-foreground">{{ t('invoice.paidOnly') }}</p></div>
+          <label class="flex items-center gap-2 text-sm"><input v-model="selectAllInvoiceOrders" type="checkbox" class="accent-primary" />{{ t('invoice.selectOrders') }}</label>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-3"><label v-for="order in eligibleInvoiceOrders" :key="order.order_no" class="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-xs"><input v-model="selectedInvoiceOrderNos" :value="order.order_no" type="checkbox" class="accent-primary" />{{ order.order_no }}</label></div>
+        <div class="mt-4 grid gap-3 md:grid-cols-[1fr_180px_auto]">
+          <select v-model="invoiceProfileId" class="h-10 rounded-lg border bg-card px-3 text-sm"><option :value="0">{{ t('invoice.choose') }}</option><option v-for="profile in invoiceProfiles" :key="profile.id" :value="profile.id">{{ profile.name }} · {{ profile.taxpayer_id }}</option></select>
+          <select v-model="invoiceType" class="h-10 rounded-lg border bg-card px-3 text-sm"><option value="ordinary">{{ t('invoice.ordinary') }} · {{ appStore.config?.invoice_config?.ordinary_tax_rate || '3.00' }}%</option><option value="special">{{ t('invoice.special') }} · {{ appStore.config?.invoice_config?.special_tax_rate || '8.00' }}%</option></select>
+          <Button :disabled="invoiceBusy || !selectedInvoiceOrderNos.length || !invoiceProfileId" @click="applyBatchInvoice">{{ invoiceBusy ? t('invoice.saving') : t('invoice.apply') }}</Button>
+        </div>
+        <p class="mt-3 text-xs text-muted-foreground">{{ t('invoice.notice') }} {{ t('invoice.closed', { wechat: 'think-more-9' }) }}</p>
+      </div>
+
       <EmptyState
-        v-else-if="orders.length === 0"
+        v-if="!orderLoading && orders.length === 0"
         icon="order"
         :description="hasOrderActiveFilters ? t('orders.emptyFiltered') : t('orders.empty')"
         :action-label="t('orders.emptyAction')"
         action-to="/products"
       />
 
-      <div v-else class="space-y-4">
+      <div v-if="!orderLoading && orders.length > 0" class="space-y-4" data-testid="order-list">
         <div
           v-for="order in orders"
           :key="order.order_no"
@@ -122,7 +136,7 @@
                 {{ statusLabel(order.status) }}
               </Badge>
               <Button as-child variant="outline" size="sm">
-                <router-link :to="`/orders/${order.order_no}`">{{ t('orders.viewDetails') }}</router-link>
+                <router-link :to="{ name: 'order-detail', params: { order_no: order.order_no } }">{{ t('orders.viewDetails') }}</router-link>
               </Button>
               <Button v-if="order.status === 'pending_payment'" as-child size="sm">
                 <router-link :to="`/pay?order_no=${order.order_no}`">{{ t('orders.payNow') }}</router-link>
@@ -245,6 +259,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ShoppingBag, Layers, Clock, CheckCircle2, Wallet } from 'lucide-vue-next'
 import { userOrderAPI } from '../../api'
+import { useAppStore } from '../../stores/app'
 import { walletAPI } from '../../api/wallet'
 import { orderStatusVariant, orderStatusLabel, type BadgeTone } from '../../utils/status'
 import { debounceAsync } from '../../utils/debounce'
@@ -260,6 +275,7 @@ import PanelHeading from '../../components/shared/PanelHeading.vue'
 import StatCard from '../../components/shared/StatCard.vue'
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 
 // ========== Tab 状态 ==========
@@ -287,6 +303,25 @@ const orders = ref<any[]>([])
 const orderPagination = ref({ page: 1, page_size: 20, total: 0, total_page: 1 })
 const orderFilters = reactive({ orderNo: '', status: '' })
 const orderStats = ref<Record<string, number>>({})
+const selectedInvoiceOrderNos = ref<string[]>([])
+const invoiceProfiles = ref<any[]>([])
+const invoiceProfileId = ref(0)
+const invoiceType = ref('ordinary')
+const invoiceBusy = ref(false)
+const eligibleInvoiceOrders = computed(() => orders.value.filter((order: any) => ['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status) && !order.invoice_requested && (!order.invoice_status || order.invoice_status === 'none')))
+const selectAllInvoiceOrders = computed({ get: () => eligibleInvoiceOrders.value.length > 0 && selectedInvoiceOrderNos.value.length === eligibleInvoiceOrders.value.length, set: (checked: boolean) => { selectedInvoiceOrderNos.value = checked ? eligibleInvoiceOrders.value.map((item: any) => item.order_no) : [] } })
+const loadInvoiceProfiles = async () => { try { invoiceProfiles.value = (await userOrderAPI.invoiceProfiles()).data.data || []; invoiceProfileId.value = Number((invoiceProfiles.value.find((item: any) => item.is_default) || invoiceProfiles.value[0])?.id || 0) } catch { invoiceProfiles.value = [] } }
+const applyBatchInvoice = async () => {
+  if (invoiceBusy.value || !selectedInvoiceOrderNos.value.length || !invoiceProfileId.value) return
+  invoiceBusy.value = true
+  try {
+    const payload = { profile_id: invoiceProfileId.value, invoice_type: invoiceType.value, order_nos: selectedInvoiceOrderNos.value }
+    const applied = await userOrderAPI.applyInvoice(payload)
+    const result = applied.data.data
+    if (result?.payment_order_no) window.location.href = `/pay?order_no=${encodeURIComponent(result.payment_order_no)}`
+    else { selectedInvoiceOrderNos.value = []; await loadOrders(orderPagination.value.page) }
+  } finally { invoiceBusy.value = false }
+}
 
 const orderStatusOptions = computed(() => [
   { value: '', label: t('orders.filters.statusAll') },
@@ -489,6 +524,7 @@ const formatDate = (raw?: string) => {
 
 onMounted(() => {
   debouncedLoadOrders(1)
+  void loadInvoiceProfiles()
 })
 
 onUnmounted(() => {

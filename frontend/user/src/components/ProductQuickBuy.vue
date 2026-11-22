@@ -91,7 +91,7 @@
                 </h3>
 
                 <div class="mt-1.5 flex flex-wrap items-center gap-1">
-                  <Badge :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'" size="xs">
+                  <Badge :variant="['auto', 'upstream'].includes(product.fulfillment_type) ? 'info' : 'neutral'" size="xs">
                     {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
                   </Badge>
                   <Badge :variant="getStockBadgeVariant(product.stock_status)" size="xs">
@@ -303,15 +303,6 @@
             </div>
             <div v-else class="flex gap-3">
               <Button
-                variant="secondary"
-                :disabled="!canPurchase"
-                class="flex-1 py-3 h-auto min-h-[44px] rounded-xl text-sm font-semibold gap-1.5"
-                @click="handleAddToCart"
-              >
-                <ShoppingCart class="w-4 h-4" />
-                {{ t('quickBuy.addToCart') }}
-              </Button>
-              <Button
                 :disabled="!canPurchase"
                 class="flex-1 py-3 h-auto min-h-[44px] rounded-xl text-sm font-semibold"
                 @click="handleBuyNow"
@@ -332,7 +323,6 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '../stores/app'
-import { useCartStore } from '../stores/cart'
 import { useBuyNowStore } from '../stores/buyNow'
 import { useUserAuthStore } from '../stores/userAuth'
 import { useUserProfileStore } from '../stores/userProfile'
@@ -340,8 +330,7 @@ import { getFirstImageUrl, getImageUrl } from '../utils/image'
 import { normalizeSkuId, buildSkuDisplayText } from '../utils/sku'
 import { resolveSkuAvailableStock, resolveSkuStockDisplay, type PublicStockDisplay } from '../utils/publicStock'
 import { useLocalized, useProductLabels } from '../composables/useProduct'
-import { toast } from '../composables/useToast'
-import { X, Image as ImageIcon, Tag, Minus, Plus, ShoppingCart } from 'lucide-vue-next'
+import { X, Image as ImageIcon, Tag, Minus, Plus } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -358,7 +347,6 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const appStore = useAppStore()
-const cartStore = useCartStore()
 const buyNowStore = useBuyNowStore()
 const userAuthStore = useUserAuthStore()
 const userProfileStore = useUserProfileStore()
@@ -554,7 +542,7 @@ const effectiveMin = computed(() => {
 const shouldEnforceSkuStock = (sku: any) => {
   if (!sku) return false
   if (sku?.stock_quantity_hidden === true || props.product?.stock_quantity_hidden === true) return false
-  if (props.product?.fulfillment_type === 'auto') return true
+  if (props.product?.fulfillment_type === 'auto' || props.product?.fulfillment_type === 'upstream') return true
   if (props.product?.fulfillment_type === 'upstream') return true
   if (props.product?.fulfillment_type !== 'manual') return false
   const total = normalizeManualStockTotal(sku?.manual_stock_total)
@@ -672,15 +660,6 @@ const canPurchase = computed(() => {
   return true
 })
 
-const selectedCartQuantity = () => {
-  if (!props.product || !selectedSku.value) return 0
-  const productId = Number(props.product.id || 0)
-  const skuId = normalizeSkuId(selectedSku.value?.id)
-  if (productId <= 0 || skuId <= 0) return 0
-  const matched = cartStore.items.find((item) => item.productId === productId && normalizeSkuId(item.skuId) === skuId)
-  return Number(matched?.quantity || 0)
-}
-
 const handleQuantityInput = (event: Event) => {
   const input = event.target as HTMLInputElement
   const parsed = Math.floor(Number(input.value))
@@ -703,69 +682,6 @@ const close = () => {
   emit('update:visible', false)
 }
 
-const handleAddToCart = () => {
-  if (!props.product || !canPurchase.value) return
-  purchaseWarning.value = ''
-
-  const sku = selectedSku.value
-  const available = skuAvailableStock(sku)
-  const cartQty = selectedCartQuantity()
-  const nextQuantity = cartQty + quantity.value
-  const productLimit = normalizeOptionalLimitNumber(props.product?.max_purchase_quantity)
-  let limit: number | null = productLimit
-  if (available !== null) {
-    limit = limit === null ? available : Math.min(limit, available)
-  }
-  if (limit !== null && nextQuantity > limit) {
-    if (available !== null && limit === available && (productLimit === null || available <= productLimit)) {
-      purchaseWarning.value = available > 0
-        ? (cartQty > 0
-            ? t('productDetail.addCartStockExceededWithCart', { count: available, cartCount: cartQty })
-            : t('productDetail.addCartStockExceeded', { count: available }))
-        : t('productDetail.stockUnavailable')
-      return
-    }
-    purchaseWarning.value = cartQty > 0
-      ? t('productDetail.addCartLimitExceededWithCart', { count: limit, cartCount: cartQty })
-      : t('productDetail.addCartLimitExceeded', { count: limit })
-    return
-  }
-
-  const images = getProductImages()
-  cartStore.addItem({
-    productId: props.product.id,
-    skuId: normalizeSkuId(sku?.id),
-    skuCode: String(sku?.sku_code || ''),
-    skuSpecValues: (sku?.spec_values && typeof sku.spec_values === 'object') ? sku.spec_values : undefined,
-    skuManualStockTotal: normalizeManualStockTotal(sku?.manual_stock_total),
-    skuManualStockLocked: normalizeStockNumber(sku?.manual_stock_locked),
-    skuManualStockSold: normalizeStockNumber(sku?.manual_stock_sold),
-    skuAutoStockAvailable: normalizeStockNumber(sku?.auto_stock_available),
-    skuUpstreamStock: normalizeManualStockTotal(sku?.upstream_stock),
-    skuStockStatus: String(sku?.stock_status || ''),
-    skuStockDisplayMode: String(sku?.stock_display_mode || props.product?.stock_display_mode || ''),
-    skuStockDisplay: String(sku?.stock_display || ''),
-    skuStockRangeMin: normalizeStockNumber(sku?.stock_range_min) || undefined,
-    skuStockRangeMax: normalizeStockNumber(sku?.stock_range_max) || undefined,
-    skuStockQuantityHidden: Boolean(sku?.stock_quantity_hidden || props.product?.stock_quantity_hidden),
-    skuStockEnforced: shouldEnforceSkuStock(sku),
-    slug: props.product.slug,
-    title: props.product.title,
-    priceAmount: String(sku?.price_amount || props.product.price_amount || '0.00'),
-    wholesalePrices: Array.isArray(props.product.wholesale_prices) ? props.product.wholesale_prices : undefined,
-    image: images[0] || '',
-    minPurchaseQuantity: normalizeOptionalLimitNumber(props.product.min_purchase_quantity) ?? undefined,
-    maxPurchaseQuantity: normalizeOptionalLimitNumber(props.product.max_purchase_quantity) ?? undefined,
-    purchaseType: props.product.purchase_type,
-    fulfillmentType: props.product.fulfillment_type,
-    manualFormSchema: props.product.manual_form_schema || {},
-    paymentChannelIds: Array.isArray(props.product.payment_channel_ids) && props.product.payment_channel_ids.length > 0 ? props.product.payment_channel_ids : undefined,
-    quantity: 1,
-  }, quantity.value)
-  toast.success(t('toast.addedToCart'))
-  close()
-}
-
 const handleBuyNow = () => {
   purchaseWarning.value = ''
   if (!canPurchase.value) return
@@ -780,7 +696,7 @@ const handleBuyNow = () => {
   }
   if (limit !== null && quantity.value > limit) {
     purchaseWarning.value = available !== null && limit === available && (productLimit === null || available <= productLimit)
-      ? (available > 0 ? t('productDetail.addCartStockExceeded', { count: available }) : t('productDetail.stockUnavailable'))
+      ? (available > 0 ? t('productDetail.stockExceeded', { count: available }) : t('productDetail.stockUnavailable'))
       : t('productDetail.addCartLimitExceeded', { count: limit })
     return
   }

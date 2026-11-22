@@ -2,6 +2,7 @@ package application
 
 import (
 	"fmt"
+	invoicedomain "github.com/dujiao-next/internal/modules/invoice/domain"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -339,6 +340,40 @@ func (s *OrderService) buildOrderResult(input orderCreateParams) (*orderBuildRes
 	if totalAmount.LessThanOrEqual(decimal.Zero) {
 		return nil, ErrInvalidOrderAmount
 	}
+	invoiceRequested := input.InvoiceRequested
+	invoiceRate, invoiceTax, invoiceBase := decimal.Zero, decimal.Zero, decimal.Zero
+	var invoiceSnapshot jsonmap.JSON
+	if invoiceRequested {
+		if input.UserID == 0 || input.IsGuest || input.InvoiceProfileID == 0 || isResellerOrderContext(input.Tenant) || s.invoiceProfiles == nil {
+			return nil, invoicedomain.ErrInvalid
+		}
+		raw, err := s.settingService.GetByKey(constants.SettingKeyInvoiceConfig)
+		if err != nil {
+			return nil, err
+		}
+		cfg, err := invoicedomain.ParseConfig(raw)
+		if err != nil {
+			return nil, err
+		}
+		invoiceRate, err = cfg.Rate(input.InvoiceType)
+		if err != nil {
+			return nil, err
+		}
+		profile, err := s.invoiceProfiles.GetByIDAndUser(input.InvoiceProfileID, input.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if profile == nil {
+			return nil, invoicedomain.ErrNotFound
+		}
+		if err = invoicedomain.NormalizeProfile(profile, input.InvoiceType == "special"); err != nil {
+			return nil, err
+		}
+		invoiceSnapshot = invoicedomain.Snapshot(profile)
+		invoiceBase = totalAmount
+		invoiceTax = invoicedomain.Tax(invoiceBase, invoiceRate)
+		totalAmount = totalAmount.Add(invoiceTax)
+	}
 
 	return &orderBuildResult{
 		Plans:                   plans,
@@ -353,6 +388,7 @@ func (s *OrderService) buildOrderResult(input orderCreateParams) (*orderBuildRes
 		OrderPromotionID:        orderPromotionID,
 		MemberLevelID:           memberLevelIDSnapshot,
 		AppliedCoupon:           appliedCoupon,
+		InvoiceRequested:        invoiceRequested, InvoiceEnabled: invoiceRequested, InvoiceProfileSnapshot: invoiceSnapshot, InvoiceTaxRate: invoiceRate, InvoiceTaxBaseAmount: invoiceBase, InvoiceTaxAmount: invoiceTax,
 	}, nil
 }
 

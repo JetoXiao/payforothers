@@ -1,0 +1,170 @@
+{
+  "legalPage": {
+    "navigation": "Legal information",
+    "eyebrow": "GPTPAYNOW · TRUST & POLICIES",
+    "back": "Back to store",
+    "updated": "Updated",
+    "contents": "On this page",
+    "print": "",
+    "termsSummary": "Purchase conditions, delivery and refunds, and each party’s rights and responsibilities.",
+    "privacySummary": "How personal information is handled when you browse, sign in, purchase, or request support.",
+    "statusTitle": "Service status",
+    "statusText": "Do not submit sensitive information or begin transactions until the operator identity, address, and working support/privacy contacts are published.",
+    "noticeTitle": "Independent service · Your rights protected",
+    "noticeText": "gptpaynow is an independent store, not OpenAI. No official authorization or partnership is claimed. Brand names identify the relevant products. Nothing in a listing, guide, or these policies excludes liability that cannot legally be excluded.",
+    "orderHelp": "View orders",
+    "tutorial": "Purchase & recharge guide",
+    "privacy": {
+      "sections": [
+        {
+          "id": "scope",
+          "title": "Scope and responsible operator",
+          "paragraphs": [
+            "This policy applies to www.gptpaynow.com and gptpaynow.com when it redirects here. The actual store operator is responsible for the processing it determines. Independent payment, redemption, and OpenAI services have their own policies; this does not remove the store’s legal responsibilities for its own disclosures, provider selection, or performance.",
+            "Version date: 2026-10-07. The operator’s legal name, address, and working contact are awaiting confirmation and must be published before commercial operation. A brand name does not replace the operator’s legal identity."
+          ]
+        },
+        {
+          "id": "data",
+          "title": "Information and purposes",
+          "paragraphs": [
+            "Browsing and security: the server and Cloudflare may process IP addresses, browser/device information, timestamps, request paths, and error logs to deliver pages, prevent abuse, and diagnose faults. Never put codes, passwords, or other secrets in URL parameters.",
+            "Accounts: email, nickname, a hash of your store password, and login/security records are used for authentication and account recovery. If third-party sign-in is enabled, authorized identifiers, email, or profile images may be received within the scope shown on that sign-in screen.",
+            "Transactions: order numbers, products, variants, amounts, payment method/status, delivery records, and necessary checkout fields are processed. Guest orders may require an email and a separate lookup password. Payment-card details and payment passwords belong only on the selected payment provider’s page, not in messages to our support.",
+            "Support: order evidence, issue descriptions, and redacted screenshots you provide are used to verify and resolve issues. Hide unrelated chats, full redemption codes, identity documents, and financial information. Any additional verification must have an explained need.",
+            "An ordinary code purchase does not require you to send the store your ChatGPT password, full cookies, session token, verification codes, recovery codes, or conversation history. If an external redemption flow requests login credentials, stop and verify its legitimacy and authorization; this policy is not permission to disclose them."
+          ]
+        },
+        {
+          "id": "basis",
+          "title": "Necessity, legal basis, and choice",
+          "paragraphs": [
+            "Information is processed only for the transaction you request, necessary security, legal obligations, or another basis permitted by applicable law. Where consent is required, obtain it before processing; do not bundle unrelated marketing permission into the purchase.",
+            "Without information genuinely necessary for a feature, that feature may not work; unrelated browsing must remain available. Material changes to purposes, recipients, or scope require additional notice and renewed consent where the law requires it."
+          ]
+        },
+        {
+          "id": "storage",
+          "title": "Cookies and browser storage",
+          "paragraphs": [
+            "The storefront uses localStorage for language, theme, its own login token, and account summary. Guest lookup credentials preferentially use sessionStorage; the purchase flow may retain necessary selections in browser storage. Clearing browser data or signing out can require fresh verification.",
+            "Cloudflare or enabled verification components may use security/anti-abuse cookies. Reading this page is not consent to non-essential tracking. Any future analytics, advertising, or marketing components requiring consent must provide appropriate notice and choice before activation.",
+            "Do not save accounts or order passwords on shared devices; sign out when finished. Store login tokens are separate from ChatGPT credentials."
+          ]
+        },
+        {
+          "id": "sharing",
+          "title": "Providers and international processing",
+          "paragraphs": [
+            "Service delivery may involve hosting, Cloudflare (CDN/security proxy), the payment provider you choose, enabled email services, and necessary suppliers/delivery providers. Only information required for the relevant function should be disclosed, not additional information for unrelated purposes.",
+            "Cloudflare’s global network and some payment or delivery providers may process information outside your region. Before relevant processing begins, the operator must verify and disclose the applicable recipients, contacts, data categories, purposes, and rights procedures, and complete required assessments, agreements, separate consent, or other legal safeguards. This general notice does not replace those steps.",
+            "Selling personal information is not a business purpose. Disclosures to authorities require a lawful, necessary basis. Read independent providers’ policies after leaving this site; their independence does not excuse our own legal obligations."
+          ]
+        },
+        {
+          "id": "retention",
+          "title": "Retention and security",
+          "paragraphs": [
+            "Keep information for the shortest period needed for the disclosed purpose, subject to mandatory transaction, tax, security, or dispute-evidence requirements. Delete or anonymize it when no further lawful need exists. Backups follow actual recovery and deletion cycles, with restricted use in the meantime.",
+            "Account deletion does not necessarily erase records that must legally be retained. The operator must explain retained categories, grounds, and duration. This page does not claim every deletion or retention function is automated; authorized personnel may need to verify and process requests.",
+            "Use safeguards proportionate to risk, including transport protection, password hashing, access controls, and backups. No system is absolutely secure. Investigate and contain incidents and notify affected individuals and authorities where required; a risk warning does not waive liability."
+          ]
+        },
+        {
+          "id": "rights",
+          "title": "Your rights and requests",
+          "paragraphs": [
+            "Depending on applicable law, you may request information, access/copies, correction, deletion, withdrawal of consent, restriction/objection to processing, or account closure. Withdrawal does not invalidate prior lawful processing or override mandatory legal obligations.",
+            "Submit requests through the published, working privacy contact, with only necessary identity/order verification. ChatGPT credentials or unrelated documents should not be requested. Requests must be handled within applicable legal deadlines; refusals require reasons and information about available remedies.",
+            "If contact details are not yet published, pause submission of sensitive or unnecessary information. You retain the right to complain to a competent regulator or consumer body or pursue lawful remedies."
+          ]
+        },
+        {
+          "id": "children",
+          "title": "Minors and policy changes",
+          "paragraphs": [
+            "This store is not intended to sell independently to minors who lack the required legal capacity. A guardian may request investigation of unauthorized information submissions or purchases through a working contact channel. Processing requiring guardian consent must not occur without appropriate consent.",
+            "Material changes will be highlighted here and in appropriate locations. New purposes or permissions must follow applicable notice/consent rules. Updates must not retroactively reduce rights on existing orders. Differences between translations should be clarified consistently with mandatory law and consumer protection."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "sections": [
+        {
+          "id": "service",
+          "title": "Independent service and scope",
+          "paragraphs": [
+            "These terms cover browsing, purchases, delivery, and support at www.gptpaynow.com. gptpaynow is an independently operated digital-products store, not OpenAI, an affiliate, or an automatically authorized reseller. Any specific authorization needs separate verifiable evidence. ChatGPT and other marks belong to their respective owners.",
+            "The operator’s legal name, address, location, and working contact are pending confirmation and publication; transactions should not begin before they are available. These terms, clear product disclosures at purchase, and the order define the transaction, subject to mandatory law. Version date: 2026-10-07."
+          ]
+        },
+        {
+          "id": "eligibility",
+          "title": "Eligibility and regional conditions",
+          "paragraphs": [
+            "You must have legal capacity for the transaction and authorization to use the account and payment method. Stolen accounts, unauthorized payments, false identity, fraud, money laundering, infringement, and unlawful use are prohibited.",
+            "Before paying, check region, term, current subscription, stacking/replacement compatibility, delivery channel, and the third-party service’s conditions. A region label is not permission to bypass official availability or usage restrictions. No promise is made of evading enforcement, avoiding all suspensions, or permanent access.",
+            "Do not pay if the product cannot lawfully be used for your location/account or compatibility is unclear. Ask for clarification first. This does not remove the store’s obligation to describe availability accurately."
+          ]
+        },
+        {
+          "id": "order",
+          "title": "Prices, orders, and payment",
+          "paragraphs": [
+            "The product, quantity, variant, currency, and total are those you confirm at checkout. Taxes or payment fees must be disclosed before payment; undisclosed charges cannot be added as a condition of normal performance.",
+            "Order creation, payment confirmation, and actual entitlement delivery are different states. Save your order number and receipt. Check the order before paying again after a delay. A store order is not authorization to auto-renew an OpenAI subscription; manage any existing third-party subscription separately.",
+            "Obvious price/stock errors must be communicated and resolved through lawful performance or refund arrangements, not arbitrary unilateral cancellation. Transaction documents or invoices must be supplied as required by law."
+          ]
+        },
+        {
+          "id": "delivery",
+          "title": "Delivery, redemption, and credentials",
+          "paragraphs": [
+            "Delivery method and estimated time must be stated before payment and may involve codes or agreed manual handling. Creating an order alone is not delivery. Code validity, redemption, and entitlement need evidence, not the merchant’s unilateral final determination.",
+            "Follow the order instructions, check domains, account, and region, and keep codes private. Never send store support your ChatGPT password, cookies, session token, verification codes, or recovery codes. Stop and verify if an external party asks for them.",
+            "For overdue delivery, invalid codes, wrong variants, or missing entitlements, retain redacted evidence and request resolution. Supplier involvement does not automatically excuse failure by the store or its fulfillment arrangements."
+          ]
+        },
+        {
+          "id": "support",
+          "title": "Subscription warranty and support",
+          "paragraphs": [
+            "A subscription-warranty claim must state its subject, period, start date, covered events, and remedies before payment. Exclusions cannot be added afterward. Ask about unclear terms; this page does not presume the absence of warranty obligations.",
+            "Platform models, limits, and features may change. Specific models are not promised forever and quotas are not unlimited, but the store must lawfully honor what it actually promised. Suspensions or cancellations require cause-based investigation; failures caused by the store or its suppliers cannot automatically be blamed on the buyer.",
+            "Support evidence normally includes the order number, timing, issue description, and relevant redacted screenshots, not ChatGPT login credentials. Use the published working support contact. The store should promptly explain status, proposed resolution, and reasons, subject to statutory deadlines."
+          ]
+        },
+        {
+          "id": "refund",
+          "title": "Cancellation, refunds, and legal rights",
+          "paragraphs": [
+            "Request cancellation promptly if an order is undelivered, not yet performed, or unredeemed. Cancellation and any real, reasonable, previously disclosed costs depend on performance status and applicable law. A digital-product label alone does not justify rejecting every refund.",
+            "An exception to a statutory cooling-off/return right needs a legal basis and any required prominent pre-purchase disclosure and separate valid confirmation. Reading these terms, preselected boxes, or payment alone do not replace legally required confirmation. Where the current flow lacks that confirmation, these terms alone cannot establish the exception.",
+            "Invalid codes, wrong delivery, failure to deliver, or material differences from the description require lawful remedies such as replacement, correction, performance, partial refund, or full refund, as appropriate. Refunds must not be forced into store-only credit.",
+            "A correctly redeemed product matching the agreement does not automatically carry a change-of-mind refund beyond applicable law or valid commitments. Mistaken purchases, region mismatch, or leaked codes must still be assessed according to disclosure, responsibility, and available remedies. There is no blanket no-refund rule after payment.",
+            "Once a refund is due, process it promptly as required and explain the amount, method, and expected timing, including actual payment-provider delays. Preserve lawful complaint, dispute, and payment-provider remedies rather than imposing a blanket ban on chargebacks."
+          ]
+        },
+        {
+          "id": "limits",
+          "title": "Reasonable allocation of responsibility",
+          "paragraphs": [
+            "The store does not guarantee uninterrupted third-party platforms, error-free AI outputs, or particular business results. Verify AI outputs independently, especially for medical, legal, or financial decisions. This does not affect the store’s own delivery, representations, or data-protection duties.",
+            "Third-party outages, policy changes, and force majeure require assessment of actual impact under applicable law, timely notice, and reasonable mitigation. They do not automatically remove performance, refund, or other legal obligations.",
+            "Nothing excludes liability that cannot be excluded, including applicable liability for fraud, intentional or grossly negligent conduct, personal injury, or unlawful personal-data processing. There is no unilateral final-interpretation clause or cap overriding consumer rights. Liability depends on facts, causation, valid agreement, and applicable law."
+          ]
+        },
+        {
+          "id": "disputes",
+          "title": "Disputes, updates, and contact",
+          "paragraphs": [
+            "You may first seek a solution through published support, but retain lawful complaint, mediation, competent-court proceedings, or arbitration under a valid voluntary agreement. No governing jurisdiction, exclusive court, or compulsory arbitration location is invented before the operator and location are confirmed.",
+            "Applicable law follows legally determined connecting factors and mandatory rules. An invalid clause does not invalidate independently enforceable provisions. Updates must identify their effective date and be reasonably notified, without retroactively reducing existing-order rights.",
+            "Read the privacy policy for personal-data processing. Until legal identity, address, and support/privacy contact are published, do not send payments, credentials, or complaints to template links. Unverified social accounts are not valid store contacts."
+          ]
+        }
+      ]
+    }
+  }
+}

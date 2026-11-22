@@ -1,0 +1,70 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        APP_VERSION: pay-for-others-local
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    extra_hosts:
+      - "gptpaynow.com:43.163.239.213"
+      - "www.gptpaynow.com:43.163.239.213"
+      - "pay.gptpaynow.com:43.163.239.213"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      SERVER_MODE: release
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?set APP_SECRET_KEY in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      USER_JWT_SECRET: ${USER_JWT_SECRET:?set USER_JWT_SECRET in .env}
+      BOOTSTRAP_DEFAULT_ADMIN_USERNAME: ${BOOTSTRAP_DEFAULT_ADMIN_USERNAME:?set BOOTSTRAP_DEFAULT_ADMIN_USERNAME in .env}
+      BOOTSTRAP_DEFAULT_ADMIN_PASSWORD: ${BOOTSTRAP_DEFAULT_ADMIN_PASSWORD:?set BOOTSTRAP_DEFAULT_ADMIN_PASSWORD in .env}
+      WEB_ADMIN_PATH: ${WEB_ADMIN_PATH:-/ops-console}
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      QUEUE_ENABLED: "true"
+      QUEUE_HOST: redis
+      QUEUE_PORT: "6379"
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?set CORS_ALLOWED_ORIGINS to the exact public HTTPS origin}
+      CORS_ALLOW_CREDENTIALS: "true"
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USERNAME: ${EMAIL_USERNAME:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+    volumes:
+      - app_db:/app/db
+      - app_uploads:/app/uploads
+      - app_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  app_db:
+  app_uploads:
+  app_logs:
+  redis_data:

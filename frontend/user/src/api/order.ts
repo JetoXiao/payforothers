@@ -50,6 +50,14 @@ export const userOrderAPI = {
     stats: (params?: any) => userApi.get('/orders/stats', { params }),
     detail: (orderNo: string, options?: any) => userApi.get(`/orders/${encodeURIComponent(orderNo)}`, options),
     cancel: (orderNo: string) => userApi.post(`/orders/${encodeURIComponent(orderNo)}/cancel`),
+    invoiceProfiles: () => userApi.get('/me/invoice-profiles'),
+    createInvoiceProfile: (data: any) => userApi.post('/me/invoice-profiles', data),
+    updateInvoiceProfile: (id: number, data: any) => userApi.put(`/me/invoice-profiles/${id}`, data),
+    deleteInvoiceProfile: (id: number) => userApi.delete(`/me/invoice-profiles/${id}`),
+    invoiceRequests: (params?: any) => userApi.get('/me/invoice-requests', { params }),
+    previewInvoice: (data: any) => userApi.post('/me/invoice-requests/preview', data),
+    applyInvoice: (data: any) => userApi.post('/me/invoice-requests', data),
+    cancelInvoice: (id: number) => userApi.post(`/me/invoice-requests/${id}/cancel`),
     downloadFulfillment: (orderNo: string) => userApi.get(`/orders/${encodeURIComponent(orderNo)}/fulfillment/download`, { blob: true }),
 }
 

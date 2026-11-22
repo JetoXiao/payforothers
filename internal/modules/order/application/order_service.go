@@ -2,6 +2,7 @@ package application
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	couponcontract "github.com/dujiao-next/internal/modules/coupon/contract"
 	coupondomain "github.com/dujiao-next/internal/modules/coupon/domain"
 	usercontract "github.com/dujiao-next/internal/modules/identity/user/contract"
+	invoicecontract "github.com/dujiao-next/internal/modules/invoice/contract"
+	notificationcontract "github.com/dujiao-next/internal/modules/notification/contract"
 	ordercontract "github.com/dujiao-next/internal/modules/order/contract"
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 	orderriskcontract "github.com/dujiao-next/internal/modules/orderrisk/contract"
@@ -23,6 +26,7 @@ import (
 	"github.com/dujiao-next/internal/config"
 	"github.com/dujiao-next/internal/constants"
 	"github.com/dujiao-next/internal/logger"
+	invoicedomain "github.com/dujiao-next/internal/modules/invoice/domain"
 	"github.com/dujiao-next/internal/shared/jsonmap"
 	"github.com/dujiao-next/internal/shared/jsonslice"
 	"github.com/dujiao-next/internal/shared/money"
@@ -41,6 +45,7 @@ type OrderService struct {
 	couponUsageRepo         couponcontract.UsageRepository
 	promotionRepo           promotioncontract.Repository
 	queueClient             ordercontract.Queue
+	notifications           notificationcontract.NotificationEnqueuer
 	settingService          *settingsapp.Service
 	defaultEmailConfig      config.EmailConfig
 	walletService           *walletapp.Service
@@ -50,6 +55,7 @@ type OrderService struct {
 	resellerAccounting      resellerAccountingTransactions
 	riskControlSvc          orderriskcontract.Controller
 	productMappingService   upstreamStockEnsurer
+	invoiceProfiles         invoicecontract.ProfileStore
 	expireMinutes           int
 }
 
@@ -100,6 +106,7 @@ type OrderServiceOptions struct {
 	ResellerAccounting      resellerAccountingTransactions
 	RiskControlService      orderriskcontract.Controller
 	ProductMappingService   upstreamStockEnsurer
+	InvoiceProfiles         invoicecontract.ProfileStore
 	ExpireMinutes           int
 }
 
@@ -110,6 +117,38 @@ func (s *OrderService) SetProductMappingService(svc upstreamStockEnsurer) {
 		return
 	}
 	s.productMappingService = svc
+}
+
+func (s *OrderService) SetNotificationService(svc notificationcontract.NotificationEnqueuer) {
+	s.notifications = svc
+}
+
+// Only called after the order transaction and mandatory timeout task succeed.
+// Never pass the complete Order: it contains private credentials and form data.
+func (s *OrderService) notifyOrderCreated(order *orderdomain.Order) {
+	if s.notifications == nil || order == nil || order.ParentID != nil {
+		return
+	}
+	lines := make([]string, 0, len(order.Items))
+	for _, item := range order.Items {
+		title, _ := item.TitleJSON[constants.LocaleZhCN].(string)
+		if title == "" {
+			title, _ = item.TitleJSON[constants.LocaleEnUS].(string)
+		}
+		if title == "" {
+			title = fmt.Sprintf("商品 #%d", item.ProductID)
+		}
+		lines = append(lines, fmt.Sprintf("%s × %d", strings.Join(strings.Fields(title), " "), item.Quantity))
+	}
+	err := s.notifications.Enqueue(notificationcontract.EnqueueInput{
+		EventType: constants.NotificationEventOrderCreated, BizType: constants.NotificationBizTypeOrder, BizID: order.ID,
+		Locale: constants.LocaleZhCN,
+		Data: jsonmap.JSON{"order_no": order.OrderNo, "amount": order.TotalAmount.String(), "currency": order.Currency,
+			"items_summary": strings.Join(lines, "\n"), "created_at": order.CreatedAt.In(time.FixedZone("CST", 8*3600)).Format("2006-01-02 15:04:05 +08:00")},
+	})
+	if err != nil {
+		logger.Warnw("order_created_notification_enqueue_failed", "order_id", order.ID, "error", err)
+	}
 }
 
 // NewOrderService 创建订单服务
@@ -132,6 +171,7 @@ func NewOrderService(opts OrderServiceOptions) *OrderService {
 		resellerAccounting:      opts.ResellerAccounting,
 		riskControlSvc:          opts.RiskControlService,
 		productMappingService:   opts.ProductMappingService,
+		invoiceProfiles:         opts.InvoiceProfiles,
 		expireMinutes:           opts.ExpireMinutes,
 	}
 }
@@ -148,6 +188,9 @@ type CreateOrderInput struct {
 	ManualFormData      map[string]jsonmap.JSON
 	SkipRiskControl     bool // 完全跳过风控（下游订单）
 	SkipIPRiskControl   bool // 跳过 IP 维度风控（渠道/Bot 订单）
+	InvoiceRequested    bool
+	InvoiceProfileID    uint
+	InvoiceType         string
 }
 
 // CreateGuestOrderInput 游客创建订单输入
@@ -162,6 +205,9 @@ type CreateGuestOrderInput struct {
 	AffiliateVisitorKey string
 	ClientIP            string
 	ManualFormData      map[string]jsonmap.JSON
+	InvoiceRequested    bool
+	InvoiceProfileID    uint
+	InvoiceType         string
 }
 
 // CreateOrderItem 创建订单项输入
@@ -239,6 +285,9 @@ func (s *OrderService) CreateOrder(input CreateOrderInput) (*orderdomain.Order, 
 		ManualFormData:      input.ManualFormData,
 		SkipRiskControl:     input.SkipRiskControl,
 		SkipIPRiskControl:   input.SkipIPRiskControl,
+		InvoiceRequested:    input.InvoiceRequested,
+		InvoiceProfileID:    input.InvoiceProfileID,
+		InvoiceType:         input.InvoiceType,
 	})
 }
 
@@ -266,6 +315,9 @@ func (s *OrderService) CreateGuestOrder(input CreateGuestOrderInput) (*orderdoma
 		ClientIP:            input.ClientIP,
 		IsGuest:             true,
 		ManualFormData:      input.ManualFormData,
+		InvoiceRequested:    input.InvoiceRequested,
+		InvoiceProfileID:    input.InvoiceProfileID,
+		InvoiceType:         input.InvoiceType,
 	})
 }
 
@@ -288,6 +340,9 @@ type orderCreateParams struct {
 	SkipManualFormCheck      bool
 	SkipRiskControl          bool
 	SkipIPRiskControl        bool
+	InvoiceRequested         bool
+	InvoiceProfileID         uint
+	InvoiceType              string
 }
 
 // OrderPreview 订单金额预览
@@ -300,6 +355,10 @@ type OrderPreview struct {
 	WholesaleDiscountAmount money.Amount       `json:"wholesale_discount_amount"`
 	TotalAmount             money.Amount       `json:"total_amount"`
 	Items                   []OrderPreviewItem `json:"items"`
+	InvoiceEnabled          bool               `json:"invoice_enabled"`
+	InvoiceRequested        bool               `json:"invoice_requested"`
+	InvoiceTaxRate          money.Amount       `json:"invoice_tax_rate"`
+	InvoiceTaxAmount        money.Amount       `json:"invoice_tax_amount"`
 }
 
 // OrderPreviewItem 订单项金额预览
@@ -334,6 +393,12 @@ type orderBuildResult struct {
 	OrderPromotionID        *uint
 	MemberLevelID           *uint
 	AppliedCoupon           *coupondomain.Coupon
+	InvoiceRequested        bool
+	InvoiceEnabled          bool
+	InvoiceProfileSnapshot  jsonmap.JSON
+	InvoiceTaxRate          decimal.Decimal
+	InvoiceTaxBaseAmount    decimal.Decimal
+	InvoiceTaxAmount        decimal.Decimal
 }
 
 // PreviewOrder 用户订单金额预览
@@ -351,6 +416,7 @@ func (s *OrderService) PreviewOrder(input CreateOrderInput) (*OrderPreview, erro
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
 		SkipManualFormCheck: true,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	}
 	if err := s.checkOrderRisk(&params, false); err != nil {
 		return nil, err
@@ -373,6 +439,7 @@ func (s *OrderService) PreviewGuestOrder(input CreateGuestOrderInput) (*OrderPre
 		IsGuest:             true,
 		ManualFormData:      input.ManualFormData,
 		SkipManualFormCheck: true,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	}
 	if err := s.checkOrderRisk(&params, false); err != nil {
 		return nil, err
@@ -421,6 +488,10 @@ func (s *OrderService) previewOrder(input orderCreateParams) (*OrderPreview, err
 		PromotionDiscountAmount: money.FromDecimal(result.PromotionDiscountAmount),
 		WholesaleDiscountAmount: money.FromDecimal(result.WholesaleDiscountAmount),
 		TotalAmount:             money.FromDecimal(result.TotalAmount),
+		InvoiceEnabled:          result.InvoiceRequested,
+		InvoiceRequested:        result.InvoiceRequested,
+		InvoiceTaxRate:          money.FromDecimal(result.InvoiceTaxRate),
+		InvoiceTaxAmount:        money.FromDecimal(result.InvoiceTaxAmount),
 		Items:                   items,
 	}, nil
 }
@@ -516,6 +587,13 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 		PromotionDiscountAmount: money.FromDecimal(result.PromotionDiscountAmount),
 		WholesaleDiscountAmount: money.FromDecimal(result.WholesaleDiscountAmount),
 		TotalAmount:             money.FromDecimal(result.TotalAmount),
+		InvoiceRequested:        result.InvoiceRequested,
+		InvoiceStatus:           "none",
+		InvoiceType:             input.InvoiceType,
+		InvoiceProfileSnapshot:  result.InvoiceProfileSnapshot,
+		InvoiceTaxRate:          money.FromDecimal(result.InvoiceTaxRate),
+		InvoiceTaxBaseAmount:    money.FromDecimal(result.InvoiceTaxBaseAmount),
+		InvoiceTaxAmount:        money.FromDecimal(result.InvoiceTaxAmount),
 		WalletPaidAmount:        money.FromDecimal(decimal.Zero),
 		OnlinePaidAmount:        money.FromDecimal(result.TotalAmount),
 		RefundedAmount:          money.FromDecimal(decimal.Zero),
@@ -540,6 +618,9 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 	if result.AppliedCoupon != nil {
 		order.CouponID = &result.AppliedCoupon.ID
 	}
+	if order.InvoiceRequested {
+		order.InvoiceStatus = invoicedomain.StatusPendingTaxPayment
+	}
 
 	err = s.orderStore.WithinTransaction(func(tx ordercontract.Transaction) error {
 		orderStore := tx.Orders()
@@ -553,6 +634,7 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 			return err
 		}
 
+		remainingInvoiceTax := result.InvoiceTaxAmount
 		for idx := range result.Plans {
 			plan := result.Plans[idx]
 			childProfit := decimal.Zero
@@ -586,6 +668,17 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 				RiskIP:                  order.RiskIP,
 				CreatedAt:               now,
 				UpdatedAt:               now,
+			}
+			if order.InvoiceRequested {
+				tax := invoicedomain.Tax(childOrder.TotalAmount.Decimal, result.InvoiceTaxRate)
+				if tax.GreaterThan(remainingInvoiceTax) || idx == len(result.Plans)-1 {
+					tax = remainingInvoiceTax
+				}
+				remainingInvoiceTax = remainingInvoiceTax.Sub(tax)
+				childOrder.InvoiceTaxBaseAmount = childOrder.TotalAmount
+				childOrder.InvoiceTaxAmount = money.FromDecimal(tax)
+				childOrder.TotalAmount = money.FromDecimal(childOrder.TotalAmount.Decimal.Add(tax))
+				childOrder.OnlinePaidAmount = childOrder.TotalAmount
 			}
 			if pricingCtx != nil {
 				resellerID := pricingCtx.ResellerID
@@ -746,9 +839,11 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 	full, err := s.orderStore.GetByID(order.ID)
 	if err == nil && full != nil {
 		FillOrderItemsFromChildren(full)
+		s.notifyOrderCreated(full)
 		return full, nil
 	}
 	FillOrderItemsFromChildren(order)
+	s.notifyOrderCreated(order)
 	return order, nil
 }
 

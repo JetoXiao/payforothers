@@ -1,13 +1,26 @@
 import { createI18n } from 'vue-i18n'
 // 默认语言（兜底语言）静态打包，其余语言按需动态加载
 import zhCN from './locales/zh-CN.json'
+import legalZhCN from './locales/legal-zh-CN.json'
+import invoiceZhCN from './locales/invoice-zh-CN.json'
+import wechatZhCN from './locales/wechat-zh-CN.json'
 
 const supportedLocales = ['zh-CN', 'zh-TW', 'en-US']
 
 // 非默认语言的懒加载器：切换语言时才下载对应语言包 chunk
 const localeLoaders: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
-    'zh-TW': () => import('./locales/zh-TW.json'),
-    'en-US': () => import('./locales/en-US.json'),
+    'zh-TW': async () => {
+        const [main, legal] = await Promise.all([import('./locales/zh-TW.json'), import('./locales/legal-zh-TW.json')])
+        const invoice = await import('./locales/invoice-zh-TW.json')
+        const wechat = await import('./locales/wechat-zh-TW.json')
+        return { default: { ...main.default, ...legal.default, ...invoice.default, ...wechat.default } }
+    },
+    'en-US': async () => {
+        const [main, legal] = await Promise.all([import('./locales/en-US.json'), import('./locales/legal-en-US.json')])
+        const invoice = await import('./locales/invoice-en-US.json')
+        const wechat = await import('./locales/wechat-en-US.json')
+        return { default: { ...main.default, ...legal.default, ...invoice.default, ...wechat.default } }
+    },
 }
 
 const loadedLocales = new Set(['zh-CN'])
@@ -36,7 +49,7 @@ const i18n = createI18n({
     locale: 'zh-CN',
     fallbackLocale: 'zh-CN',
     // 键断言为 string，避免 locale 类型被收窄为 "zh-CN" 字面量（其余语言在运行时动态注入）
-    messages: { 'zh-CN': zhCN } as Record<string, typeof zhCN>,
+    messages: { 'zh-CN': { ...zhCN, ...legalZhCN, ...invoiceZhCN, ...wechatZhCN } } as Record<string, typeof zhCN & typeof legalZhCN & typeof invoiceZhCN & typeof wechatZhCN>,
 })
 
 async function loadLocaleMessages(locale: string): Promise<void> {

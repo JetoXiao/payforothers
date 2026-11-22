@@ -12,6 +12,7 @@ import (
 
 	"github.com/dujiao-next/internal/constants"
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
+	invoicegormstore "github.com/dujiao-next/internal/modules/invoice/infrastructure/gormstore"
 	ordercontract "github.com/dujiao-next/internal/modules/order/contract"
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 	orderriskdomain "github.com/dujiao-next/internal/modules/orderrisk/domain"
@@ -66,6 +67,9 @@ func (r *Store) Create(order *orderdomain.Order, items []orderdomain.OrderItem) 
 		order.GuestPassword = r.hashGuestCredential(order.GuestEmail, order.GuestPassword)
 	}
 	if err := r.db.Create(order).Error; err != nil {
+		return err
+	}
+	if err := invoicegormstore.CreateForCheckout(r.db, order); err != nil {
 		return err
 	}
 	for i := range items {
@@ -527,7 +531,28 @@ func (r *Store) UpdateStatus(id uint, status string, updates map[string]interfac
 		updates = map[string]interface{}{}
 	}
 	updates["status"] = status
-	return r.db.Model(&orderdomain.Order{}).Where("orders.deleted_at IS NULL AND id = ?", id).Updates(updates).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&orderdomain.Order{}).Where("orders.deleted_at IS NULL AND id = ?", id).Updates(updates).Error; err != nil {
+			return err
+		}
+		if _, paid := updates["paid_at"]; !paid && status != constants.OrderStatusCanceled {
+			return nil
+		}
+		var order orderdomain.Order
+		if err := tx.First(&order, id).Error; err != nil {
+			return err
+		}
+		if order.InvoiceRequestID == nil {
+			return nil
+		}
+		if status == constants.OrderStatusCanceled {
+			return invoicegormstore.OnCanceled(tx, &order, time.Now())
+		}
+		if order.PaidAt != nil {
+			return invoicegormstore.OnPaid(tx, &order, *order.PaidAt)
+		}
+		return nil
+	})
 }
 
 // ListByUser 获取用户订单列表
@@ -799,7 +824,21 @@ func (r *Store) UpdateFields(id uint, updates map[string]interface{}) error {
 	if id == 0 || len(updates) == 0 {
 		return nil
 	}
-	return r.db.Model(&orderdomain.Order{}).Where("orders.deleted_at IS NULL AND id = ?", id).Updates(updates).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if _, refund := updates["refunded_amount"]; refund {
+			var order orderdomain.Order
+			if err := tx.First(&order, id).Error; err != nil {
+				return err
+			}
+			if err := invoicegormstore.HasPendingSource(tx, &order); err != nil {
+				return err
+			}
+			if order.InvoiceRequestID != nil && order.InvoiceStatus != "issued" {
+				updates["invoice_status"] = "needs_review"
+			}
+		}
+		return tx.Model(&orderdomain.Order{}).Where("orders.deleted_at IS NULL AND id = ?", id).Updates(updates).Error
+	})
 }
 
 // UpdateChildrenStatus 把所有非目标状态的子订单批量更新为 targetStatus,返回受影响行数。

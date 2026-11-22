@@ -14,6 +14,8 @@ import (
 
 // OrderSummary 订单列表响应（精简字段）
 type OrderSummary struct {
+	Purpose                 string          `json:"purpose,omitempty"`
+	InvoiceRequestID        *uint           `json:"invoice_request_id,omitempty"`
 	OrderNo                 string          `json:"order_no"`
 	Status                  string          `json:"status"`
 	Currency                string          `json:"currency"`
@@ -25,11 +27,14 @@ type OrderSummary struct {
 	CreatedAt               time.Time       `json:"created_at"`
 	Items                   []OrderItemResp `json:"items,omitempty"`
 	Children                []OrderSummary  `json:"children,omitempty"`
+	InvoiceRequested        bool            `json:"invoice_requested"`
+	InvoiceStatus           string          `json:"invoice_status"`
 }
 
 // NewOrderSummary 从 orderdomain.Order 构造 OrderSummary
 func NewOrderSummary(o *orderdomain.Order) OrderSummary {
 	s := OrderSummary{
+		Purpose: o.Purpose, InvoiceRequestID: o.InvoiceRequestID,
 		OrderNo:                 o.OrderNo,
 		Status:                  o.Status,
 		Currency:                o.Currency,
@@ -39,6 +44,8 @@ func NewOrderSummary(o *orderdomain.Order) OrderSummary {
 		WholesaleDiscountAmount: o.WholesaleDiscountAmount,
 		TotalAmount:             o.TotalAmount,
 		CreatedAt:               o.CreatedAt,
+		InvoiceRequested:        o.InvoiceRequested,
+		InvoiceStatus:           o.InvoiceStatus,
 	}
 	for _, item := range o.Items {
 		resp := newOrderItemResp(&item)
@@ -63,6 +70,10 @@ func NewOrderSummaryList(orders []orderdomain.Order) []OrderSummary {
 
 // OrderDetail 订单详情响应（完整字段）
 type OrderDetail struct {
+	Purpose                  string            `json:"purpose,omitempty"`
+	InvoiceRequestID         *uint             `json:"invoice_request_id,omitempty"`
+	InvoiceProfile           jsonmap.JSON      `json:"invoice_profile,omitempty"`
+	InvoiceType              string            `json:"invoice_type,omitempty"`
 	OrderNo                  string            `json:"order_no"`
 	GuestEmail               string            `json:"guest_email,omitempty"`
 	GuestLocale              string            `json:"guest_locale,omitempty"`
@@ -86,6 +97,10 @@ type OrderDetail struct {
 	Items                    []OrderItemResp   `json:"items,omitempty"`
 	Fulfillment              *FulfillmentResp  `json:"fulfillment,omitempty"`
 	Children                 []OrderDetail     `json:"children,omitempty"`
+	InvoiceRequested         bool              `json:"invoice_requested"`
+	InvoiceStatus            string            `json:"invoice_status"`
+	InvoiceTaxRate           money.Amount      `json:"invoice_tax_rate"`
+	InvoiceTaxAmount         money.Amount      `json:"invoice_tax_amount"`
 }
 
 // OrderRefundResp 用户侧订单退款记录响应
@@ -98,9 +113,10 @@ type OrderRefundResp struct {
 }
 
 // NewOrderDetail 从 orderdomain.Order 构造 OrderDetail，
-// 内部自动处理 upstream 类型伪装和成本价清除。
+// 内部清除成本价并将上游自动交付呈现为自动交付。
 func NewOrderDetail(o *orderdomain.Order) OrderDetail {
 	d := OrderDetail{
+		Purpose: o.Purpose, InvoiceRequestID: o.InvoiceRequestID, InvoiceProfile: o.InvoiceProfileSnapshot, InvoiceType: o.InvoiceType,
 		OrderNo:                 o.OrderNo,
 		GuestEmail:              o.GuestEmail,
 		GuestLocale:             o.GuestLocale,
@@ -119,6 +135,10 @@ func NewOrderDetail(o *orderdomain.Order) OrderDetail {
 		PaidAt:                  o.PaidAt,
 		CanceledAt:              o.CanceledAt,
 		CreatedAt:               o.CreatedAt,
+		InvoiceRequested:        o.InvoiceRequested,
+		InvoiceStatus:           o.InvoiceStatus,
+		InvoiceTaxRate:          o.InvoiceTaxRate,
+		InvoiceTaxAmount:        o.InvoiceTaxAmount,
 	}
 	paid := o.PaidAt != nil
 	for _, item := range o.Items {
@@ -180,7 +200,7 @@ type OrderItemResp struct {
 func newOrderItemResp(item *orderdomain.OrderItem) OrderItemResp {
 	ft := item.FulfillmentType
 	if ft == "upstream" {
-		ft = "manual"
+		ft = "auto"
 	}
 	return OrderItemResp{
 		Title:                    item.TitleJSON,
@@ -216,7 +236,7 @@ type FulfillmentResp struct {
 func newFulfillmentResp(f *fulfillmentdomain.Fulfillment) FulfillmentResp {
 	typ := f.Type
 	if typ == "upstream" {
-		typ = "manual"
+		typ = "auto"
 	}
 	return FulfillmentResp{
 		Type:             typ,

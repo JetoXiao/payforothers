@@ -24,6 +24,7 @@ import (
 	adminauthtransport "github.com/dujiao-next/internal/modules/identity/adminauth/transport/http"
 	adminauthztransport "github.com/dujiao-next/internal/modules/identity/adminauthorization/transport/http"
 	adminusertransport "github.com/dujiao-next/internal/modules/identity/user/transport/http/admin"
+	invoicetransport "github.com/dujiao-next/internal/modules/invoice/transport/http"
 	memberleveltransport "github.com/dujiao-next/internal/modules/memberlevel/transport/http"
 	notificationtransport "github.com/dujiao-next/internal/modules/notification/transport/http"
 	ordertransport "github.com/dujiao-next/internal/modules/order/transport/http"
@@ -150,6 +151,7 @@ func registerAdminRoutes(
 	uploadtransport.RegisterAdminRoutes(authorized, uploadtransport.NewAdminHandler(c.UploadService, c.ContentMediaService))
 
 	// 订单管理
+	invoicetransport.RegisterAdminRoutes(authorized, invoicetransport.NewHandler(c.InvoiceStore, c.InvoiceRequestStore))
 	ordertransport.RegisterAdminRoutes(authorized, adminOrderHandler)
 	ordertransport.RegisterAdminRefundWriteRoutes(authorized, adminOrderRefundHandler)
 	ordertransport.RegisterAdminRefundRoutes(authorized, adminOrderRefundHandler)

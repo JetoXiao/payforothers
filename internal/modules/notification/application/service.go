@@ -19,7 +19,10 @@ type Service struct {
 	logService     *LogService
 	telegramSender contract.TelegramSender
 	feishuSender   contract.FeishuSender
+	wecomSender    contract.WeComSender
 }
+
+func (s *Service) SetWeComSender(sender contract.WeComSender) { s.wecomSender = sender }
 
 // NewService 创建通知中心服务。
 func NewService(
@@ -60,7 +63,11 @@ func (s *Service) Enqueue(input contract.EnqueueInput) error {
 		Force:     input.Force,
 		Data:      format.JSONToMap(input.Data),
 	}
-	return s.queueClient.EnqueueNotificationDispatch(payload, 5)
+	retries := 5
+	if eventType == constants.NotificationEventOrderCreated {
+		retries = 15
+	}
+	return s.queueClient.EnqueueNotificationDispatch(payload, retries)
 }
 
 // Dispatch 处理通知分发任务
@@ -76,6 +83,9 @@ func (s *Service) Dispatch(ctx context.Context, payload queue.NotificationDispat
 	setting, err := s.settingService.GetNotificationCenterSetting()
 	if err != nil {
 		return err
+	}
+	if eventType == constants.NotificationEventOrderCreated {
+		return s.dispatchWeComOrder(ctx, setting, payload)
 	}
 	if !setting.Scenes.IsSceneEnabled(eventType) {
 		return nil

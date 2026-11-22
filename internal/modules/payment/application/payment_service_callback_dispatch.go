@@ -23,6 +23,10 @@ func (s *PaymentService) enqueueOrderPaidAsync(order *orderdomain.Order, payment
 	if order == nil {
 		return
 	}
+	// Invoice supplements are accounting-only orders: never procure, fulfill, award points, or email goods.
+	if order.Purpose == "invoice_tax" {
+		return
+	}
 	if s.affiliateSvc != nil {
 		if err := s.affiliateSvc.HandleOrderPaid(order.ID); err != nil {
 			log.Warnw("affiliate_handle_order_paid_failed",

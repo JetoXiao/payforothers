@@ -1,0 +1,33 @@
+name: gptpaynow-autnine
+services:
+  bridge:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - ./data:/data
+      - shop_db:/shopdb:ro
+    secrets: [upstream_api_key, bridge_secret, storage_key]
+    networks:
+      shop:
+        aliases: [autnine-bridge]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 160m
+    cpus: 0.5
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: "2"}
+secrets:
+  upstream_api_key: {file: ./secrets/upstream_api_key}
+  bridge_secret: {file: ./secrets/bridge_secret}
+  storage_key: {file: ./secrets/storage_key}
+networks:
+  shop: {external: true, name: payforothers18003_default}
+volumes:
+  shop_db: {external: true, name: payforothers18003_app_db}

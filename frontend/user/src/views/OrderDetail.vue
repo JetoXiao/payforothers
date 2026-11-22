@@ -53,6 +53,10 @@
       />
 
       <div v-else class="space-y-6">
+        <div v-if="isAutoFulfillmentProcessing" class="flex items-start gap-3 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900 dark:border-sky-900 dark:bg-sky-950/30 dark:text-sky-100">
+          <Info class="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{{ t('orderDetail.autoFulfillmentProcessing') }}</p>
+        </div>
         <div class="rounded-2xl border bg-card shadow-sm p-6">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -189,9 +193,9 @@
                     </div>
                     <div class="border rounded-xl p-4 text-sm text-muted-foreground whitespace-pre-wrap break-all overflow-hidden max-h-48 overflow-y-auto">{{ child.fulfillment.payload }}</div>
                   </div>
-                  <div v-else-if="fulfillmentDeliveryLines(child.fulfillment).length"
+                  <div v-else-if="fulfillmentDisplayLines(child.fulfillment).length"
                     class="mt-3 border rounded-xl p-4 text-sm text-muted-foreground space-y-1 break-all overflow-hidden">
-                    <div v-for="(line, index) in fulfillmentDeliveryLines(child.fulfillment)" :key="`child-fulfillment-${child.id}-${index}`">{{ line }}</div>
+                    <div v-for="(line, index) in fulfillmentDisplayLines(child.fulfillment)" :key="`child-fulfillment-${child.id}-${index}`">{{ line }}</div>
                   </div>
                   <div v-else-if="child.fulfillment.payload"
                     class="mt-3 border rounded-xl p-4 text-sm text-muted-foreground whitespace-pre-wrap break-all overflow-hidden">
@@ -248,9 +252,9 @@
             </div>
             <div class="border rounded-xl p-4 text-sm text-muted-foreground whitespace-pre-wrap break-all overflow-hidden max-h-64 overflow-y-auto">{{ order.fulfillment.payload }}</div>
           </div>
-          <div v-else-if="fulfillmentDeliveryLines(order.fulfillment).length"
+          <div v-else-if="fulfillmentDisplayLines(order.fulfillment).length"
             class="mt-4 border rounded-xl p-4 text-sm text-muted-foreground space-y-1 break-all overflow-hidden">
-            <div v-for="(line, index) in fulfillmentDeliveryLines(order.fulfillment)" :key="`fulfillment-${order.order_no || 'order'}-${index}`">{{ line }}</div>
+            <div v-for="(line, index) in fulfillmentDisplayLines(order.fulfillment)" :key="`fulfillment-${order.order_no || 'order'}-${index}`">{{ line }}</div>
           </div>
           <div v-else
             class="mt-4 border rounded-xl p-4 text-sm text-muted-foreground whitespace-pre-wrap break-all overflow-hidden">
@@ -449,12 +453,13 @@ const { t } = useI18n()
 
 const {
   loading, order, debouncedLoadOrder, cancelOrder,
+  isAutoFulfillmentProcessing,
   statusLabel, statusVariant, fulfillmentTypeLabelText, fulfillmentStatusLabelText,
   formatDate, getLocalizedText, formatMoney, formatDiscountMoney, hasDiscountAmount, hasAmount,
   refundReasonText, showRefundRecordsCard, refundRecords, showTimeCard,
   orderItemImage, orderItemSkuText, manualSubmissionRows,
   hasItemDiscount, formatItemDiscountTotal, formatItemPaidAmount, resolvedChildStatus,
-  fulfillmentDeliveryLines, instructionBlocks, isFulfillmentTruncated,
+  fulfillmentDisplayLines, instructionBlocks, isFulfillmentTruncated,
   fulfillmentCopied, handleCopyFulfillment, fulfillmentDownloading, handleDownloadFulfillment,
 } = useOrderDetail()
 </script>

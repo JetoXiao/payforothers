@@ -46,7 +46,7 @@
       <!-- Row 2: Badges -->
       <div class="flex flex-wrap items-center gap-1">
         <!-- Mobile: fulfillment + stock warning -->
-        <Badge class="sm:hidden" size="xs" :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'">
+        <Badge class="sm:hidden" size="xs" :variant="['auto', 'upstream'].includes(product.fulfillment_type) ? 'info' : 'neutral'">
           {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
         </Badge>
         <Badge v-if="product.stock_status === 'out_of_stock' || product.stock_status === 'low_stock'"
@@ -58,7 +58,7 @@
         <Badge class="hidden sm:inline-flex" size="xs" :variant="product.purchase_type === 'guest' ? 'warning' : 'success'">
           {{ getPurchaseTypeLabel(product.purchase_type) }}
         </Badge>
-        <Badge class="hidden sm:inline-flex" size="xs" :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'">
+        <Badge class="hidden sm:inline-flex" size="xs" :variant="['auto', 'upstream'].includes(product.fulfillment_type) ? 'info' : 'neutral'">
           {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
         </Badge>
         <Badge class="hidden sm:inline-flex" size="xs" :variant="getStockBadgeVariant(product.stock_status)">

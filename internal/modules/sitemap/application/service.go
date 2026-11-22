@@ -117,10 +117,7 @@ func (s *Service) collectURLs(ctx context.Context, baseURL string) ([]domain.URL
 		Priority   string
 	}{
 		{"/", "daily", "1.0"},
-		{"/products", "daily", "0.9"},
-		{"/blog", "weekly", "0.6"},
-		{"/notice", "weekly", "0.5"},
-		{"/about", "monthly", "0.3"},
+		{"/tutorials/chatgpt-recharge", "weekly", "0.9"},
 		{"/terms", "yearly", "0.2"},
 		{"/privacy", "yearly", "0.2"},
 	}

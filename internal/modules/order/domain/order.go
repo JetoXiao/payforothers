@@ -4,6 +4,7 @@ import (
 	"time"
 
 	fulfillmentdomain "github.com/dujiao-next/internal/modules/fulfillment/domain"
+	"github.com/dujiao-next/internal/shared/jsonmap"
 	"github.com/dujiao-next/internal/shared/money"
 )
 
@@ -42,7 +43,16 @@ type Order struct {
 	CanceledAt              *time.Time   `gorm:"index" json:"canceled_at"`                                                         // 取消时间
 	CreatedAt               time.Time    `gorm:"index" json:"created_at"`                                                          // 创建时间
 	UpdatedAt               time.Time    `gorm:"index" json:"updated_at"`                                                          // 更新时间
-	DeletedAt               *time.Time   `gorm:"index;index:idx_orders_risk_pending,priority:5" json:"-"`                          // 软删除时间
+	InvoiceRequested        bool         `gorm:"not null;default:false;index" json:"invoice_requested"`
+	InvoiceType             string       `gorm:"type:varchar(20)" json:"invoice_type,omitempty"`
+	InvoiceRequestID        *uint        `gorm:"index" json:"invoice_request_id,omitempty"`
+	Purpose                 string       `gorm:"type:varchar(24);not null;default:'';index" json:"purpose,omitempty"`
+	InvoiceStatus           string       `gorm:"type:varchar(32);not null;default:'none';index" json:"invoice_status"`
+	InvoiceProfileSnapshot  jsonmap.JSON `gorm:"type:json" json:"invoice_profile,omitempty"`
+	InvoiceTaxRate          money.Amount `gorm:"type:decimal(6,2);not null;default:0" json:"invoice_tax_rate"`
+	InvoiceTaxBaseAmount    money.Amount `gorm:"type:decimal(20,2);not null;default:0" json:"invoice_tax_base_amount"`
+	InvoiceTaxAmount        money.Amount `gorm:"type:decimal(20,2);not null;default:0" json:"invoice_tax_amount"`
+	DeletedAt               *time.Time   `gorm:"index;index:idx_orders_risk_pending,priority:5" json:"-"` // 软删除时间
 
 	Items []OrderItem `gorm:"foreignKey:OrderID" json:"items,omitempty"` // 订单项
 	// 关联

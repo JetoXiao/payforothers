@@ -544,7 +544,7 @@ const populateForm = (product: AdminProduct) => {
     min_purchase_quantity: Number(product.min_purchase_quantity || 0) > 0 ? Math.floor(Number(product.min_purchase_quantity || 0)) : '',
     max_purchase_quantity: Number(product.max_purchase_quantity || 0) > 0 ? Math.floor(Number(product.max_purchase_quantity || 0)) : '',
     stock_display_mode: product.stock_display_mode || 'exact',
-    fulfillment_type: product.fulfillment_type || 'manual',
+    fulfillment_type: product.is_mapped ? (product.local_manual_fulfillment ? 'manual' : 'upstream') : (product.fulfillment_type || 'manual'),
     manual_stock_total: resolveManualStockMetrics(product).total,
     skus: Array.isArray(product.skus) ? product.skus.map((item: AdminProductSKU) => createSKUFormItem(item)) : [],
     category_id: Number(product.category_id || 0) || null,
@@ -618,6 +618,7 @@ const handleSubmit = async () => {
       max_purchase_quantity: maxPurchaseQuantityValue,
       stock_display_mode: form.stock_display_mode,
       fulfillment_type: form.fulfillment_type,
+      local_manual_fulfillment: editingIsMapped.value ? form.fulfillment_type === 'manual' : undefined,
       manual_stock_total: effectiveManualStockTotal,
       skus: normalizedSKUs,
       payment_channel_ids: form.payment_channel_ids.length > 0 ? form.payment_channel_ids : [],
@@ -833,16 +834,17 @@ watch(
 
           <div class="col-span-1">
             <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{ t('admin.products.form.fulfillmentType') }}</label>
-            <Select v-model="form.fulfillment_type" :disabled="editingIsMapped">
+            <Select v-model="form.fulfillment_type">
               <SelectTrigger class="h-9 w-full">
                 <SelectValue :placeholder="t('admin.products.fulfillmentType.manual')" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="manual">{{ t('admin.products.fulfillmentType.manual') }}</SelectItem>
-                <SelectItem value="auto">{{ t('admin.products.fulfillmentType.auto') }}</SelectItem>
+                <SelectItem value="manual">{{ editingIsMapped ? t('storefrontControls.manual') : t('admin.products.fulfillmentType.manual') }}</SelectItem>
+                <SelectItem v-if="editingIsMapped" value="upstream">{{ t('storefrontControls.upstream') }}</SelectItem>
+                <SelectItem v-else value="auto">{{ t('admin.products.fulfillmentType.auto') }}</SelectItem>
               </SelectContent>
             </Select>
-            <p v-if="editingIsMapped" class="mt-1 text-xs text-indigo-600">{{ t('admin.products.mappedFulfillmentLocked') }}</p>
+            <p v-if="editingIsMapped" class="mt-2 text-xs leading-5 text-muted-foreground">{{ t('storefrontControls.deliveryHint') }}</p>
           </div>
 
           <div class="col-span-1">
@@ -954,7 +956,7 @@ watch(
               <div>
                 <h3 class="text-sm font-semibold text-foreground">{{ t('admin.products.form.skuTitle') }}</h3>
                 <p class="text-xs text-muted-foreground mt-1">{{ t('admin.products.form.skuTip') }}</p>
-                <p v-if="editingIsMapped" class="mt-1 text-xs text-indigo-600">{{ t('admin.products.mappedSkuLocked') }}</p>
+                <p v-if="editingIsMapped" class="mt-1 text-xs text-muted-foreground">{{ t('storefrontControls.skuHint') }}</p>
               </div>
               <Button v-if="!editingIsMapped" type="button" size="sm" variant="outline" @click="addSKU">
                 {{ t('admin.products.form.skuAdd') }}

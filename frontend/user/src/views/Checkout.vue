@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
+  <div class="min-h-screen bg-background pb-16 pt-24 text-foreground">
+    <div class="container mx-auto max-w-7xl px-4 sm:px-6">
       <div class="mb-8">
-        <h1 class="mb-2 text-3xl font-black text-foreground">{{ t('checkout.title') }}</h1>
+        <h1 class="mb-2 text-3xl font-semibold tracking-[-0.035em] text-foreground">{{ t('checkout.title') }}</h1>
         <p class="text-sm text-muted-foreground">{{ t('checkout.subtitle') }}</p>
       </div>
 
@@ -103,6 +103,32 @@
               class="h-11"
               :placeholder="t('checkout.couponPlaceholder')"
             />
+          </div>
+
+          <div v-if="userAuthStore.isAuthenticated && !isResellerTenant" class="rounded-2xl border bg-card text-card-foreground p-6">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-bold text-foreground">{{ t('checkout.invoice.title') }}</h2>
+                <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ t('checkout.invoice.hint') }}</p>
+              </div>
+              <input v-model="invoiceRequested" :disabled="!invoiceConfig.enabled" :aria-label="t('checkout.invoice.title')" type="checkbox" class="mt-1 h-4 w-4 accent-primary" />
+            </div>
+            <div v-if="invoiceRequested" class="mt-4 rounded-xl border bg-secondary p-4">
+              <label class="mb-3 block text-sm">{{ t('invoice.kind') }}
+                <select v-model="invoiceType" class="mt-2 block h-11 w-full rounded-xl border bg-card px-3">
+                  <option value="ordinary">{{ t('invoice.ordinary') }} · {{ invoiceConfig.ordinary_tax_rate }}%</option>
+                  <option value="special">{{ t('invoice.special') }} · {{ invoiceConfig.special_tax_rate }}%</option>
+                </select>
+              </label>
+              <p class="text-sm font-semibold">{{ t('checkout.invoice.selectProfile') }}</p>
+              <p class="mt-1 text-xs text-muted-foreground">{{ t('checkout.invoice.manageHint') }}</p>
+              <div class="mt-3 grid gap-3"><select v-model="invoiceProfileId" :aria-label="t('invoice.choose')" class="h-11 w-full min-w-0 rounded-xl border bg-card px-3 text-sm"><option :value="null">{{ t('checkout.invoice.selectProfile') }}</option><option v-for="profile in invoiceProfiles" :key="profile.id" :value="profile.id">{{ profile.name }} · {{ profile.taxpayer_id }}</option></select><div class="flex flex-wrap gap-4"><RouterLink to="/me/profile" target="_blank" class="text-sm font-semibold text-primary hover:underline">{{ t('checkout.invoice.manage') }}</RouterLink><button type="button" class="text-sm hover:underline" @click="reloadInvoiceProfiles">{{ t('invoice.reloadProfiles') }}</button></div></div>
+              <p v-if="!invoiceProfileValid" class="mt-3 text-sm text-danger">{{ t('invoice.needProfile') }}</p>
+              <p v-for="p in invoiceProfiles.filter(p => Number(p.id) === Number(invoiceProfileId))" :key="p.id" class="mt-3 break-all text-sm">{{ t('invoice.email') }}: {{ p.email }}</p>
+              <p class="mt-3 text-xs text-warning">{{ t('checkout.invoice.pendingNotice') }}</p>
+            </div>
+            <p v-if="!invoiceConfig.enabled" class="mt-3 text-sm text-muted-foreground">{{ t('invoice.disabled') }}</p>
+            <p class="mt-3 text-xs text-muted-foreground">{{ t('invoice.wechat', {wechat: invoiceConfig.support_wechat || 'think-more-9'}) }}</p>
           </div>
 
           <div
@@ -221,6 +247,10 @@
               <span class="font-semibold">{{ t('checkout.previewTotal') }}</span>
               <span class="font-mono text-lg font-bold">{{ formatPrice(previewTotal, previewCurrency) }}</span>
             </div>
+            <div v-if="preview?.invoice_requested" class="flex items-center justify-between text-sm text-warning">
+              <span>{{ t('checkout.invoice.tax') }} ({{ preview.invoice_tax_rate }}%)</span>
+              <span class="font-mono">+{{ formatPrice(preview.invoice_tax_amount, previewCurrency) }}</span>
+            </div>
           </div>
 
           <div v-if="previewLoading || couponRefreshing" class="mb-3 text-xs text-muted-foreground">
@@ -332,11 +362,12 @@ const {
   itemStockExceeded, itemStockHint,
   checkoutItemCurrency, checkoutItemPriceParts, checkoutItemOriginalPriceParts, checkoutItemHasPriceDiscount,
   manualFormProducts, manualFormData, submitAttempted, getManualFieldLabel, getManualFieldPlaceholder, manualFieldError,
-  couponCode, isResellerTenant,
+  couponCode, isResellerTenant, invoiceRequested, invoiceProfileId, invoiceProfiles,
+  invoiceType, invoiceConfig, invoiceProfileValid, reloadInvoiceProfiles,
   checkoutMode, guestEmail, guestPassword, guestEmailValid,
   guestCaptchaEnabled, captchaProvider, guestCaptchaPayload, guestTurnstileToken, guestTurnstileSiteKey,
   guestImageCaptchaRef, guestTurnstileRef, handleGuestCaptchaConfigStale,
-  previewCurrency, previewOriginal, previewCoupon, previewPromotion, previewWholesale, previewMemberDiscount, previewTotal,
+  preview, previewCurrency, previewOriginal, previewCoupon, previewPromotion, previewWholesale, previewMemberDiscount, previewTotal,
   previewLoading, couponRefreshing, previewStatusText, hasPositiveAmount, formatDiscountPrice, checkoutAlert,
   showBalanceOption, walletLoading, walletBalance, useBalance, walletOnlyPayment,
   expectedWalletPaidDisplay, expectedOnlinePayDisplay, expectedOnlinePayCents,

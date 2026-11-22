@@ -9,6 +9,7 @@ import (
 
 	"github.com/dujiao-next/internal/constants"
 	reseller "github.com/dujiao-next/internal/modules/reseller/contract"
+	settingsstorefront "github.com/dujiao-next/internal/modules/settings/schema/storefront"
 	"github.com/dujiao-next/internal/platform/http/response"
 	"github.com/dujiao-next/internal/shared/jsonmap"
 	"github.com/dujiao-next/internal/version"
@@ -152,6 +153,20 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeInternal, "error.config_fetch_failed", err)
 		return
 	}
+	if invoiceConfig, invoiceErr := h.settings.GetByKey(constants.SettingKeyInvoiceConfig); invoiceErr == nil && invoiceConfig != nil {
+		data["invoice_config"] = invoiceConfig
+	} else {
+		data["invoice_config"] = map[string]interface{}{"enabled": true, "ordinary_tax_rate": "3.00", "special_tax_rate": "8.00", "support_wechat": "think-more-9"}
+	}
+
+	menuValue, _ := h.settings.GetByKey("personal_menu_config")
+	menuJSON, ok := menuValue.(jsonmap.JSON)
+	if !ok {
+		if raw, valid := menuValue.(map[string]interface{}); valid {
+			menuJSON = jsonmap.JSON(raw)
+		}
+	}
+	data["personal_menu_config"] = settingsstorefront.NormalizePersonalMenuJSON(menuJSON)
 
 	publicChannels, err := h.payments.GetOrderPaymentChannels()
 	if err != nil {

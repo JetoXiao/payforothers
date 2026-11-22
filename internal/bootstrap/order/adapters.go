@@ -333,6 +333,7 @@ func (a orderCreateAdapter) CreateOrder(input ordertransport.CreateOrderInput) (
 		AffiliateVisitorKey: input.AffiliateVisitorKey,
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	})
 	return order, mapOrderTransportError(err)
 }
@@ -349,6 +350,7 @@ func (a orderCreateAdapter) CreateGuestOrder(input ordertransport.CreateGuestOrd
 		AffiliateVisitorKey: input.AffiliateVisitorKey,
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	})
 	return order, mapOrderTransportError(err)
 }
@@ -405,6 +407,7 @@ func (a orderPreviewAdapter) PreviewOrder(input ordertransport.CreateOrderInput)
 		AffiliateVisitorKey: input.AffiliateVisitorKey,
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	})
 	if err != nil {
 		return nil, mapOrderTransportError(err)
@@ -424,6 +427,7 @@ func (a orderPreviewAdapter) PreviewGuestOrder(input ordertransport.CreateGuestO
 		AffiliateVisitorKey: input.AffiliateVisitorKey,
 		ClientIP:            input.ClientIP,
 		ManualFormData:      input.ManualFormData,
+		InvoiceRequested:    input.InvoiceRequested, InvoiceProfileID: input.InvoiceProfileID, InvoiceType: input.InvoiceType,
 	})
 	if err != nil {
 		return nil, mapOrderTransportError(err)
@@ -469,6 +473,7 @@ func mapOrderPreview(preview *orderapp.OrderPreview) *ordertransport.OrderPrevie
 		})
 	}
 	return &ordertransport.OrderPreview{
+		InvoiceRequested: preview.InvoiceRequested, InvoiceTaxRate: preview.InvoiceTaxRate, InvoiceTaxAmount: preview.InvoiceTaxAmount,
 		Currency:                preview.Currency,
 		OriginalAmount:          preview.OriginalAmount,
 		MemberDiscountAmount:    preview.MemberDiscountAmount,

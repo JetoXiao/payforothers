@@ -23,21 +23,15 @@
           </p>
           <div class="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" as-child>
-              <RouterLink to="/products">
-                <ShoppingBag class="opacity-70" />
-                {{ t('nav.products') }}
-              </RouterLink>
-            </Button>
-            <Button variant="secondary" size="sm" as-child>
-              <RouterLink to="/notice">
-                <Bell class="opacity-70" />
-                {{ t('nav.notice') }}
-              </RouterLink>
-            </Button>
-            <Button variant="secondary" size="sm" as-child>
-              <RouterLink to="/blog">
+              <RouterLink to="/tutorials/chatgpt-recharge">
                 <BookOpen class="opacity-70" />
-                {{ t('nav.blog') }}
+                {{ t('notFoundPage.tutorial') }}
+              </RouterLink>
+            </Button>
+            <Button variant="secondary" size="sm" as-child>
+              <RouterLink to="/guest/orders">
+                <ClipboardList class="opacity-70" />
+                {{ t('notFoundPage.orders') }}
               </RouterLink>
             </Button>
           </div>
@@ -62,7 +56,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Bell, BookOpen, Frown, Home, Info, ShoppingBag } from 'lucide-vue-next'
+import { ArrowLeft, BookOpen, ClipboardList, Frown, Home, Info } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'

@@ -16,7 +16,7 @@
       <Card class="rounded-3xl p-7 shadow-lg backdrop-blur-sm sm:p-9">
         <div class="mb-8 text-center">
           <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary">{{ brandSiteName }}</p>
-          <h1 class="mt-3 text-3xl font-black text-foreground">
+        <h1 class="mt-3 text-3xl font-semibold tracking-[-0.035em] text-foreground">
             {{ step === 'totp' ? t('auth.login.totp.title') : t('auth.login.title') }}
           </h1>
           <p class="mt-2 text-sm text-muted-foreground">

@@ -34,6 +34,9 @@ func (s *Service) SendTest(ctx context.Context, input contract.TestSendInput) er
 	if err != nil {
 		return err
 	}
+	if channel == constants.NotificationChannelWeCom {
+		return s.sendWeComTest(ctx, setting)
+	}
 	scene := strings.ToLower(strings.TrimSpace(input.Scene))
 	if scene == "" {
 		scene = constants.NotificationEventExceptionAlert

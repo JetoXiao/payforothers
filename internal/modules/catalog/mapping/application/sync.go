@@ -35,6 +35,13 @@ func (s *Service) SyncProduct(mappingID uint) error {
 	if mapping == nil {
 		return mappingcontract.ErrMappingNotFound
 	}
+	localMode, modeErr := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
+	if modeErr != nil {
+		return modeErr
+	}
+	if localMode != nil && localMode.FulfillmentType == constants.FulfillmentTypeManual {
+		return nil
+	}
 
 	conn, err := s.connections.GetByID(mapping.ConnectionID)
 	if err != nil {
@@ -78,6 +85,9 @@ func (s *Service) SyncProduct(mappingID uint) error {
 	localProduct, err := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
 	if err != nil {
 		return fmt.Errorf("get local product: %w", err)
+	}
+	if localProduct != nil && localProduct.FulfillmentType == constants.FulfillmentTypeManual {
+		return nil
 	}
 	if localProduct != nil {
 		needsProductUpdate := false
@@ -259,6 +269,12 @@ func (s *Service) syncUpstreamWholesalePrices(mapping *mappingdomain.Mapping, lo
 func (s *Service) markUpstreamUnavailable(mapping *mappingdomain.Mapping, status string, now time.Time) error {
 	// 本地商品下架
 	localProduct, err := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
+	if err != nil {
+		return err
+	}
+	if localProduct != nil && localProduct.FulfillmentType == constants.FulfillmentTypeManual {
+		return nil
+	}
 	if err == nil && localProduct != nil && localProduct.IsActive {
 		localProduct.IsActive = false
 		_ = s.products.Update(localProduct)
@@ -623,7 +639,7 @@ func (s *Service) SyncConnectionStock(connectionID uint, connMappings []mappingd
 func (s *Service) syncProductFromData(mapping *mappingdomain.Mapping, conn *siteconnectiondomain.Connection, upProduct *upstream.UpstreamProduct, now *time.Time) {
 	// ── 1. 同步本地商品字段 ──
 	localProduct, err := s.products.GetByID(strconv.FormatUint(uint64(mapping.LocalProductID), 10))
-	if err != nil || localProduct == nil {
+	if err != nil || localProduct == nil || localProduct.FulfillmentType == constants.FulfillmentTypeManual {
 		return
 	}
 

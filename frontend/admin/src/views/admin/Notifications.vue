@@ -12,6 +12,7 @@ import TableSkeleton from '@/components/TableSkeleton.vue'
 import { formatDate, toRFC3339 } from '@/utils/format'
 import { notifyError, notifySuccess } from '@/utils/notify'
 import SettingsNotificationTab from './components/SettingsNotificationTab.vue'
+import SettingsWeComCard from './components/SettingsWeComCard.vue'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -266,12 +267,14 @@ const changeNotificationLogPage = (page: number) => {
 }
 
 const notificationChannelLabel = (value: string) => {
+  if (value === 'wecom') return t('wecom.channel')
   if (value === 'telegram') return t('admin.settings.notification.channels.telegram.title')
   if (value === 'feishu') return t('admin.settings.notification.channels.feishu.title')
   return t('admin.settings.notification.channels.email.title')
 }
 
 const notificationSceneLabel = (value: string) => {
+  if (value === 'order_created') return t('wecom.event')
   const keyMap: Record<string, string> = {
     wallet_recharge_success: 'admin.settings.notification.scenes.walletRechargeSuccess',
     order_paid_success: 'admin.settings.notification.scenes.orderPaidSuccess',
@@ -351,6 +354,7 @@ onMounted(async () => {
       </div>
     </div>
 
+    <SettingsWeComCard @tested="fetchNotificationLogs(1)" />
     <SettingsNotificationTab ref="notificationTabRef" :data="notificationData" :current-lang="currentLang" @saved="fetchSettings" />
 
     <div class="rounded-xl border border-border bg-card p-6">
@@ -430,6 +434,7 @@ onMounted(async () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">{{ t('admin.settings.notification.logs.filters.allChannels') }}</SelectItem>
+            <SelectItem value="wecom">{{ t('wecom.channel') }}</SelectItem>
             <SelectItem value="email">{{ t('admin.settings.notification.channels.email.title') }}</SelectItem>
             <SelectItem value="telegram">{{ t('admin.settings.notification.channels.telegram.title') }}</SelectItem>
             <SelectItem value="feishu">{{ t('admin.settings.notification.channels.feishu.title') }}</SelectItem>
@@ -451,6 +456,7 @@ onMounted(async () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">{{ t('admin.settings.notification.logs.filters.allScenes') }}</SelectItem>
+            <SelectItem value="order_created">{{ t('wecom.event') }}</SelectItem>
             <SelectItem v-for="scene in testScenes" :key="scene.value" :value="scene.value">{{ scene.label }}</SelectItem>
           </SelectContent>
         </Select>

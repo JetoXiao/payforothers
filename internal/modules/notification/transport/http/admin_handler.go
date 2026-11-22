@@ -129,6 +129,7 @@ func (h *AdminHandler) TestNotificationCenterSettings(c *gin.Context) {
 	channel := strings.ToLower(strings.TrimSpace(req.Channel))
 	if channel != constants.NotificationChannelEmail &&
 		channel != constants.NotificationChannelTelegram &&
+		channel != constants.NotificationChannelWeCom &&
 		channel != constants.NotificationChannelFeishu {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", nil)
 		return

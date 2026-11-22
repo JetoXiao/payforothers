@@ -357,6 +357,7 @@ const (
 const (
 	NotificationEventWalletRechargeSuccess    = "wallet_recharge_success"
 	NotificationEventOrderPaidSuccess         = "order_paid_success"
+	NotificationEventOrderCreated             = "order_created"
 	NotificationEventManualFulfillmentPending = "manual_fulfillment_pending"
 	NotificationEventExceptionAlert           = "exception_alert"
 	NotificationEventExceptionAlertCheck      = "exception_alert_check"
@@ -367,6 +368,7 @@ const (
 	NotificationChannelEmail    = "email"
 	NotificationChannelTelegram = "telegram"
 	NotificationChannelFeishu   = "feishu"
+	NotificationChannelWeCom    = "wecom"
 )
 
 // 通知中心异常阈值类型常量
@@ -476,6 +478,7 @@ const (
 	SettingKeyTelegramBotConfig        = "telegram_bot_config"
 	SettingKeyTelegramBotRuntimeStatus = "telegram_bot_runtime_status"
 	SettingKeyOrderEmailTemplateConfig = "order_email_template_config"
+	SettingKeyInvoiceConfig            = "invoice_config"
 	SettingFieldSiteCurrency           = "currency"
 	SettingFieldStorefrontTemplate     = "storefront_template"
 	SettingFieldPaymentExpireMinutes   = "payment_expire_minutes"

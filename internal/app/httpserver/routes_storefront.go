@@ -15,6 +15,7 @@ import (
 	contenttransport "github.com/dujiao-next/internal/modules/content/transport/http"
 	giftcardtransport "github.com/dujiao-next/internal/modules/giftcard/transport/http"
 	userauthtransport "github.com/dujiao-next/internal/modules/identity/userauth/transport/http"
+	invoicetransport "github.com/dujiao-next/internal/modules/invoice/transport/http"
 	memberleveltransport "github.com/dujiao-next/internal/modules/memberlevel/transport/http"
 	ordertransport "github.com/dujiao-next/internal/modules/order/transport/http"
 	paymenttransport "github.com/dujiao-next/internal/modules/payment/transport/http"
@@ -43,6 +44,7 @@ func registerStorefrontRoutes(
 	userGiftCardHandler *giftcardtransport.UserHandler,
 	publicMemberLevelHandler *memberleveltransport.PublicHandler,
 	userProfileHandler *userauthtransport.UserProfileHandler,
+	invoiceHandler *invoicetransport.Handler,
 	userEmailHandler *userauthtransport.UserEmailHandler,
 	userPasswordHandler *userauthtransport.UserPasswordHandler,
 	userVerifyHandler *userauthtransport.UserVerifyHandler,
@@ -117,6 +119,7 @@ func registerStorefrontRoutes(
 	user.Use(middleware.UserJWTAuthMiddleware(cfg.UserJWT.SecretKey, c.UserStore))
 	{
 		userauthtransport.RegisterUserProfileRoutes(user, userProfileHandler)
+		invoicetransport.RegisterUserRoutes(user.Group("", middleware.RequireMainTenantForResellerConsole()), invoiceHandler)
 		auditlogtransport.RegisterUserRoutes(user, userAuditLogHandler)
 		userauthtransport.RegisterUserPasswordRoutes(user, userPasswordHandler)
 		userauthtransport.RegisterUserTelegramRoutes(user, userTelegramHandler)

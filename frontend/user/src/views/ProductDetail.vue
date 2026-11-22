@@ -1,7 +1,7 @@
 <template>
   <div
-    class="product-detail-page min-h-screen bg-background text-foreground pt-24 pb-16">
-    <div class="container mx-auto px-4">
+    class="product-detail-page min-h-screen bg-background pb-16 pt-24 text-foreground">
+    <div class="container mx-auto max-w-7xl px-4 sm:px-6">
       <!-- Loading Skeleton -->
       <div v-if="loading" class="space-y-8">
         <div class="h-5 w-48 rounded theme-skeleton"></div>
@@ -37,14 +37,13 @@
           class="mb-8"
           :items="[
             { label: t('nav.home'), to: '/' },
-            { label: t('nav.products'), to: '/products' },
             { label: getLocalizedText(product.title) },
           ]"
         />
 
         <!-- Main Info Card -->
         <div
-          class="bg-card backdrop-blur-xl border rounded-3xl overflow-hidden mb-8 shadow-2xl">
+          class="mb-8 overflow-hidden rounded-2xl border bg-card shadow-soft">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <!-- Product Images (Left) -->
             <ProductImageGallery
@@ -55,7 +54,7 @@
             />
 
             <!-- Product Info (Right) -->
-            <div class="p-6 md:p-8 lg:p-12 flex flex-col justify-center">
+            <div class="flex flex-col justify-center p-6 md:p-8 lg:p-12">
               <div class="mb-6">
                 <div v-if="categoryName" class="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
                   {{ t('productDetail.categoryLabel') }} · {{ categoryName }}
@@ -71,7 +70,7 @@
                   </Badge>
                 </div>
 
-                <h1 class="mb-4 text-2xl md:text-3xl lg:text-5xl font-black leading-tight text-foreground">
+                <h1 class="mb-4 text-3xl font-semibold leading-tight tracking-[-0.035em] text-foreground lg:text-4xl">
                   {{ getLocalizedText(product.title) }}
                 </h1>
 
@@ -82,8 +81,8 @@
                     {{ getPurchaseTypeLabel(product.purchase_type) }}
                   </Badge>
 
-                  <Badge :variant="product.fulfillment_type === 'auto' ? 'info' : 'neutral'">
-                    <Zap v-if="product.fulfillment_type === 'auto'" class="h-3 w-3" />
+                  <Badge :variant="['auto', 'upstream'].includes(product.fulfillment_type) ? 'info' : 'neutral'">
+                    <Zap v-if="['auto', 'upstream'].includes(product.fulfillment_type)" class="h-3 w-3" />
                     <Pencil v-else class="h-3 w-3" />
                     {{ getFulfillmentTypeLabel(product.fulfillment_type) }}
                   </Badge>
@@ -302,9 +301,6 @@
                     {{ t('productDetail.loginToBuy') }}
                   </Button>
                   <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Button variant="secondary" class="h-12 font-bold" :disabled="!canPurchase" @click="addToCart">
-                      {{ t('productDetail.addToCart') }}
-                    </Button>
                     <Button class="h-12 font-bold" :disabled="!canPurchase" @click="buyNow">
                       {{ t('productDetail.buyNow') }}
                     </Button>
@@ -317,52 +313,32 @@
         </div>
 
         <!-- Details Content Card -->
-        <div v-if="product.content"
+          <div v-if="product.content"
           class="bg-card backdrop-blur-xl border rounded-3xl overflow-hidden mb-12 p-6 md:p-8 lg:p-12 relative">
           <h2
             class="text-2xl font-bold mb-8 text-foreground flex items-center gap-3 border-b pb-6">
             <span class="w-1.5 h-8 bg-primary rounded-full"></span>
             {{ t('productDetail.details') }}
           </h2>
-          <div v-html="processHtmlForDisplay(getLocalizedText(product.content))"
+          <div v-html="cleanProductHtml(getLocalizedText(product.content))"
             class="prose prose-gray dark:prose-invert prose-lg max-w-none theme-prose">
           </div>
         </div>
 
-        <!-- Related Posts -->
-        <section v-if="relatedPosts.length"
-          class="bg-card backdrop-blur-xl border rounded-3xl overflow-hidden mb-12 p-6 md:p-8 lg:p-12 relative">
-          <h2 class="text-2xl font-bold text-foreground mb-8 flex items-center gap-3 border-b pb-6">
-            <span class="w-1.5 h-8 bg-primary rounded-full"></span>
-            {{ t('productDetail.relatedPosts') }}
-          </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <router-link
-              v-for="rp in relatedPosts"
-              :key="rp.id"
-              :to="`/blog/${rp.slug}`"
-              class="group bg-card backdrop-blur-md border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all flex flex-col"
-            >
-              <div v-if="rp.thumbnail" class="h-32 overflow-hidden relative">
-                <img :src="getImageUrl(rp.thumbnail)" :alt="getLocalizedText(rp.title)" loading="lazy"
-                  class="h-full w-full object-cover transition-transform group-hover:scale-110" />
-              </div>
-              <div class="p-5 flex flex-col flex-1">
-                <h3 class="font-semibold text-foreground line-clamp-2 mb-2">{{ getLocalizedText(rp.title) }}</h3>
-                <p v-if="rp.summary" class="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-3">
-                  {{ getLocalizedText(rp.summary) }}
-                </p>
-                <time class="mt-auto text-xs text-muted-foreground font-mono">
-                  {{ formatRelatedPostDate(rp.published_at) }}
-                </time>
-              </div>
-            </router-link>
-          </div>
+        <div v-if="hasWechatSupport" class="mb-12 rounded-2xl border bg-card p-6 md:p-8">
+          <WechatSupport />
+        </div>
+        <section class="mb-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4" :aria-label="t('productDetail.purchaseGuideTitle')">
+          <article v-for="item in purchaseGuide" :key="item.title" class="rounded-2xl border bg-card p-5">
+            <component :is="item.icon" class="mb-4 h-5 w-5 text-primary" aria-hidden="true" />
+            <h2 class="text-sm font-semibold text-foreground">{{ item.title }}</h2>
+            <p class="mt-2 text-sm leading-6 text-muted-foreground">{{ item.text }}</p>
+          </article>
         </section>
 
         <!-- Back Button -->
         <div class="mb-12 text-center">
-          <router-link to="/products"
+          <router-link to="/"
             class="inline-flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors border-b border-transparent hover:border-current pb-1">
             <ArrowLeft class="w-5 h-5" />
             <span>{{ t('productDetail.backToProducts') }}</span>
@@ -383,7 +359,6 @@
           :show-product-promotion-price="mobileBarShowProductPromotionPrice"
           :product-promotion-price-display="mobileBarProductPromotionPriceDisplay"
           :product-price-display="mobileBarProductPriceDisplay"
-          @add-to-cart="addToCart"
           @buy-now="buyNow"
           @go-login="goLogin"
         />
@@ -402,7 +377,7 @@
             {{ t('errorBoundary.retry') }}
           </Button>
           <Button variant="secondary" as-child class="rounded-full h-10">
-            <router-link to="/products">{{ t('productDetail.backToProducts') }}</router-link>
+            <router-link to="/">{{ t('productDetail.backToProducts') }}</router-link>
           </Button>
         </template>
       </EmptyState>
@@ -413,11 +388,13 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Lock, Minus, Pencil, Plus, RotateCw, Tag, UserPlus, Zap } from 'lucide-vue-next'
-import { getImageUrl } from '../utils/image'
-import { processHtmlForDisplay } from '../utils/content'
+import { ArrowLeft, BadgeCheck, CircleAlert, ClipboardCheck, Lock, Minus, Pencil, Plus, RotateCw, ShieldCheck, Tag, UserPlus, Zap } from 'lucide-vue-next'
+import { processHtmlForDisplay, replaceRedemptionUrlForDisplay } from '../utils/content'
 import { useProductDetail } from '../composables/useProductDetail'
+import { useAppStore } from '../stores/app'
 import ProductImageGallery from '../components/product/ProductImageGallery.vue'
+import WechatSupport from '../components/WechatSupport.vue'
+import { useWechatSupport } from '../composables/useWechatSupport'
 import ProductMobileBar from '../components/product/ProductMobileBar.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -426,6 +403,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
+const { hasWechatSupport, productSupportHtml } = useWechatSupport()
+const appStore = useAppStore()
 
 // 视图专属：移动端固定购买条（IntersectionObserver 监听桌面购买区是否出屏）
 const purchaseActionsRef = ref<HTMLElement | null>(null)
@@ -454,8 +433,8 @@ const {
   hasPromotionPrice, getPromotionPriceAmount, getPromotionSaveAmount,
   hasSkuPromotionPrice, getSkuPromotionSaveAmount,
   hasPromotionRules, getPromotionRules,
-  formatPromotionRule, formatWholesaleTier, formatRelatedPostDate, normalizeSkuId,
-  loading, product, relatedPosts, currentImage, selectedSkuId, quantity, purchaseWarning,
+  formatPromotionRule, formatWholesaleTier, normalizeSkuId,
+  loading, product, currentImage, selectedSkuId, quantity, purchaseWarning,
   activeSkus, selectedSku,
   selectedSkuMemberPrice, hasMemberPrice,
   hasSelectedSkuWholesalePrice, selectedSkuWholesaleFinalIsMember, selectedSkuWholesaleFinalPrice,
@@ -466,12 +445,25 @@ const {
   quantityEffectiveLimit, quantityEffectiveMin, handleQuantityInput,
   requiresLogin, requiresSKUSelection, canPurchase, cannotPurchaseReason,
   categoryName, images,
-  addToCart, buyNow, goLogin, loadProduct,
+  buyNow, goLogin, loadProduct,
   mobileBarShowMemberPrice, mobileBarMemberPriceDisplay,
   mobileBarShowSkuPromotionPrice, mobileBarSkuPromotionPriceDisplay,
   mobileBarShowSkuPrice, mobileBarSkuPriceDisplay,
   mobileBarShowProductPromotionPrice, mobileBarProductPromotionPriceDisplay, mobileBarProductPriceDisplay,
 } = useProductDetail({ onLoaded: () => setupMobileBarObserver() })
+
+const purchaseGuide = [
+  { title: t('productDetail.purchaseGuide.beforeTitle'), text: t('productDetail.purchaseGuide.beforeText'), icon: CircleAlert },
+  { title: t('productDetail.purchaseGuide.deliveryTitle'), text: t('productDetail.purchaseGuide.deliveryText'), icon: ClipboardCheck },
+  { title: t('productDetail.purchaseGuide.accountTitle'), text: t('productDetail.purchaseGuide.accountText'), icon: BadgeCheck },
+  { title: t('productDetail.purchaseGuide.supportTitle'), text: t('productDetail.purchaseGuide.supportText'), icon: ShieldCheck },
+]
+
+const cleanProductHtml = (html: string) => {
+  const blocked = /人民币支付卡网[：:]?[\s\S]*?(?:@qiujiuyi|$)|pay\.ldxp\.cn\/shop\/qiujiuyi[\s\S]*?(?:@qiujiuyi|$)/gi
+  const redemptionUrl = String(appStore.config?.brand?.redemption_url || '').trim()
+  return productSupportHtml(replaceRedemptionUrlForDisplay(processHtmlForDisplay(html), redemptionUrl).replace(blocked, ''))
+}
 
 onUnmounted(() => {
   if (observer) {

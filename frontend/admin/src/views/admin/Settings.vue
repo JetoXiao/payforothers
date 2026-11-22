@@ -20,6 +20,7 @@ import SettingsSMTPTab from './components/SettingsSMTPTab.vue'
 import SettingsCaptchaTab from './components/SettingsCaptchaTab.vue'
 import SettingsOrderEmailTemplateTab from './components/SettingsOrderEmailTemplateTab.vue'
 import SettingsNavigationTab from './components/SettingsNavigationTab.vue'
+import SettingsPersonalMenuTab from './components/SettingsPersonalMenuTab.vue'
 import SettingsHomeAnnouncementTab from './components/SettingsHomeAnnouncementTab.vue'
 import SettingsUpstreamSyncTab from './components/SettingsUpstreamSyncTab.vue'
 
@@ -29,6 +30,7 @@ const smtpTabRef = ref<InstanceType<typeof SettingsSMTPTab>>()
 const captchaTabRef = ref<InstanceType<typeof SettingsCaptchaTab>>()
 const orderEmailTemplateTabRef = ref<InstanceType<typeof SettingsOrderEmailTemplateTab>>()
 const navigationTabRef = ref<InstanceType<typeof SettingsNavigationTab>>()
+const personalMenuTabRef = ref<InstanceType<typeof SettingsPersonalMenuTab>>()
 const homeAnnouncementTabRef = ref<InstanceType<typeof SettingsHomeAnnouncementTab>>()
 const upstreamSyncTabRef = ref<InstanceType<typeof SettingsUpstreamSyncTab>>()
 const siteIconPickerRef = ref<InstanceType<typeof MediaPicker> | null>(null)
@@ -53,6 +55,7 @@ const registrationForm = reactive({
   allowed_email_domains_text: '',
 })
 const orderPaymentExpireMinutes = ref(15)
+const invoiceForm = reactive({ enabled: false, ordinary_tax_rate: 3, special_tax_rate: 8 })
 type FooterLinkItem = {
   name: string
   url: string
@@ -74,6 +77,7 @@ const tabs = computed(() => [
   { label: t('admin.settings.tabs.basic'), value: 'basic' },
   { label: t('admin.settings.tabs.template'), value: 'template' },
   { label: t('admin.settings.tabs.navigation'), value: 'navigation' },
+  { label: t('storefrontControls.title'), value: 'personal_menu' },
   { label: t('admin.settings.tabs.about'), value: 'about' },
   { label: t('admin.settings.tabs.legal'), value: 'legal' },
   { label: t('admin.settings.tabs.homeAnnouncement'), value: 'home_announcement' },
@@ -184,6 +188,7 @@ const form = reactive({
     // site_icon 是浏览器 favicon；site_logo 是前台页面 Logo，二者必须独立保存和清除。
     site_icon: '',
     site_logo: '',
+    redemption_url: 'https://966qjy.xyz',
     site_description: createLocalizedField(),
   },
   currency: 'CNY',
@@ -191,6 +196,7 @@ const form = reactive({
   contact: {
     telegram: '',
     whatsapp: '',
+    wechat: [] as string[],
   },
   seo: {
     title: createLocalizedField(),
@@ -371,7 +377,7 @@ const notifyErrorIfNeeded = (err: unknown, fallback: string) => {
 const fetchSettings = async () => {
   loading.value = true
   try {
-    const [siteRes, orderRes, smtpRes, captchaRes, telegramRes, googleRes, dashboardRes, registrationRes, orderEmailTmplRes] = await Promise.all([
+    const [siteRes, orderRes, smtpRes, captchaRes, telegramRes, googleRes, dashboardRes, registrationRes, orderEmailTmplRes, invoiceRes] = await Promise.all([
       adminAPI.getSettings({ key: 'site_config' }),
       adminAPI.getSettings({ key: 'order_config' }),
       adminAPI.getSMTPSettings(),
@@ -381,7 +387,15 @@ const fetchSettings = async () => {
       adminAPI.getSettings({ key: 'dashboard_config' }),
       adminAPI.getSettings({ key: 'registration_config' }),
       adminAPI.getOrderEmailTemplateSettings(),
+      adminAPI.getSettings({ key: 'invoice_config' }),
     ])
+
+    if (invoiceRes.data?.data) {
+      const invoiceConfig = invoiceRes.data.data as Record<string, unknown>
+      invoiceForm.enabled = invoiceConfig.enabled === true
+      invoiceForm.ordinary_tax_rate = Number(invoiceConfig.ordinary_tax_rate ?? 3)
+      invoiceForm.special_tax_rate = Number(invoiceConfig.special_tax_rate ?? 8)
+    }
 
     if (siteRes.data && siteRes.data.data) {
       const data = siteRes.data.data as Record<string, unknown>
@@ -391,6 +405,7 @@ const fetchSettings = async () => {
         form.brand.site_url = String(brand.site_url || '')
         form.brand.site_icon = String(brand.site_icon || '')
         form.brand.site_logo = String(brand.site_logo || '')
+        form.brand.redemption_url = String(brand.redemption_url || '')
         form.brand.site_description = normalizeLocalizedField(brand.site_description)
       }
       {
@@ -400,6 +415,10 @@ const fetchSettings = async () => {
       if (data.contact) {
         Object.assign(form.contact, data.contact)
       }
+      const contact = data.contact as Record<string, unknown> | undefined
+      form.contact.wechat = Array.isArray(contact?.wechat)
+        ? contact.wechat.filter((value): value is string => typeof value === 'string')
+        : []
       const seo = data.seo as Record<string, unknown> | undefined
       if (seo) {
         ;['title', 'keywords', 'description'].forEach((field) => {
@@ -605,12 +624,16 @@ const saveRegistrationSettings = async () => {
 }
 
 const saveSiteSettings = async () => {
+  const wechat = form.contact.wechat.map(value => value.trim()).filter(Boolean)
+  if (wechat.some(value => !/^[A-Za-z0-9_-]{1,64}$/.test(value))) {
+    throw new Error(t('storefrontControls.wechat.invalid'))
+  }
   const payload = {
     key: 'site_config',
     value: {
       brand: form.brand,
       currency: String(form.currency || 'CNY').trim().toUpperCase(),
-      contact: form.contact,
+      contact: { ...form.contact, wechat },
       seo: form.seo,
       about: form.about,
       legal: form.legal,
@@ -652,6 +675,10 @@ const saveOrderSettings = async () => {
       max_refund_days: normalizedMaxRefundDays,
     },
   })
+}
+
+const saveInvoiceSettings = async () => {
+  await adminAPI.updateSettings({ key: 'invoice_config', value: { enabled: invoiceForm.enabled === true, ordinary_tax_rate: Math.min(100, Math.max(0, Number(invoiceForm.ordinary_tax_rate) || 0)), special_tax_rate: Math.min(100, Math.max(0, Number(invoiceForm.special_tax_rate) || 0)) } })
 }
 
 const addAboutServiceItem = () => {
@@ -760,6 +787,10 @@ const saveDashboardSettings = async () => {
 }
 
 const saveSettings = async () => {
+  if (currentTab.value === 'personal_menu') {
+    await personalMenuTabRef.value?.save()
+    return
+  }
   if (currentTab.value === 'smtp') {
     await smtpTabRef.value?.save()
     return
@@ -795,6 +826,7 @@ const saveSettings = async () => {
     } else {
       await saveRegistrationSettings()
       await saveOrderSettings()
+      await saveInvoiceSettings()
       await saveSiteSettings()
     }
     notifySuccess(t('admin.settings.alerts.saveSuccess'))
@@ -879,6 +911,15 @@ onMounted(() => {
             />
             <p class="text-xs text-muted-foreground">{{ t('admin.settings.registration.allowedEmailDomainsDesc') }}</p>
           </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-border bg-card">
+        <div class="border-b border-border bg-muted/40 px-6 py-4"><h2 class="text-lg font-semibold">{{ t('admin.settings.invoice.title') }}</h2><p class="mt-1 text-xs text-muted-foreground">{{ t('admin.settings.invoice.subtitle') }}</p></div>
+        <div class="grid grid-cols-1 gap-6 p-6 md:grid-cols-3">
+          <div class="flex items-start gap-3"><Switch id="invoice-enabled" v-model="invoiceForm.enabled" /><div><Label for="invoice-enabled">{{ t('admin.settings.invoice.enabled') }}</Label><p class="text-xs text-muted-foreground">{{ t('admin.settings.invoice.enabledDesc') }}</p></div></div>
+          <div class="space-y-2"><Label>{{ t('admin.settings.invoice.ordinaryRate') }}</Label><Input v-model.number="invoiceForm.ordinary_tax_rate" type="number" min="0" max="100" step="0.01" /></div>
+          <div class="space-y-2"><Label>{{ t('admin.settings.invoice.specialRate') }}</Label><Input v-model.number="invoiceForm.special_tax_rate" type="number" min="0" max="100" step="0.01" /></div>
         </div>
       </div>
 
@@ -992,6 +1033,11 @@ onMounted(() => {
             <Input v-model="form.brand.site_description[currentLang]" :placeholder="t('admin.settings.brand.siteDescriptionPlaceholder')" />
             <p class="text-xs text-muted-foreground">{{ t('admin.settings.brand.siteDescriptionTip') }}</p>
           </div>
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-medium text-muted-foreground">兑换网址</label>
+            <Input v-model="form.brand.redemption_url" type="url" placeholder="https://example.com/redeem" />
+            <p class="text-xs text-muted-foreground">自动交付订单会展示“兑换网址”和“兑换卡密”。仅支持 HTTPS，留空则保留原始交付内容。</p>
+          </div>
         </div>
       </div>
 
@@ -1032,6 +1078,25 @@ onMounted(() => {
           <div class="space-y-2">
             <label class="text-xs font-medium text-muted-foreground">{{ t('admin.settings.contact.whatsapp') }}</label>
             <Input v-model="form.contact.whatsapp" :placeholder="t('admin.settings.contact.whatsappPlaceholder')" />
+          </div>
+          <div class="space-y-3 md:col-span-2" data-testid="wechat-settings">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <h3 class="text-sm font-semibold">{{ t('storefrontControls.wechat.title') }}</h3>
+              <Button type="button" size="sm" variant="outline" :disabled="form.contact.wechat.length >= 20" @click="form.contact.wechat.push('')">
+                {{ t('storefrontControls.wechat.add') }}
+              </Button>
+            </div>
+            <p class="text-xs leading-5 text-muted-foreground">{{ t('storefrontControls.wechat.description') }}</p>
+            <p v-if="!form.contact.wechat.length" class="rounded-lg border border-dashed p-4 text-xs text-muted-foreground">{{ t('storefrontControls.wechat.empty') }}</p>
+            <div v-for="(_, index) in form.contact.wechat" :key="index" class="flex items-end gap-3">
+              <div class="min-w-0 flex-1 space-y-1">
+                <label :for="'wechat-account-' + index" class="text-xs text-muted-foreground">{{ t('storefrontControls.wechat.account', { index: index + 1 }) }}</label>
+                <Input :id="'wechat-account-' + index" v-model="form.contact.wechat[index]" maxlength="64" :placeholder="t('storefrontControls.wechat.placeholder')" />
+              </div>
+              <Button type="button" variant="outline" :aria-label="t('storefrontControls.wechat.removeAccount', { index: index + 1 })" @click="form.contact.wechat.splice(index, 1)">
+                {{ t('storefrontControls.wechat.remove') }}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1391,6 +1456,9 @@ onMounted(() => {
 
       <TabsContent value="navigation" :forceMount="true" v-show="currentTab === 'navigation'" class="mt-0">
         <SettingsNavigationTab ref="navigationTabRef" :current-lang="currentLang" @saved="fetchSettings" />
+      </TabsContent>
+      <TabsContent value="personal_menu" :forceMount="true" v-show="currentTab === 'personal_menu'" class="mt-0">
+        <SettingsPersonalMenuTab ref="personalMenuTabRef" />
       </TabsContent>
 
       <TabsContent value="telegram" :forceMount="true" v-show="currentTab === 'telegram'" class="space-y-6 mt-0">

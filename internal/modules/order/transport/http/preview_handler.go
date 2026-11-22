@@ -13,6 +13,7 @@ import (
 	productdomain "github.com/dujiao-next/internal/modules/catalog/product/domain"
 	"github.com/dujiao-next/internal/modules/catalog/product/manualform"
 	couponcontract "github.com/dujiao-next/internal/modules/coupon/contract"
+	invoicedomain "github.com/dujiao-next/internal/modules/invoice/domain"
 	promotioncontract "github.com/dujiao-next/internal/modules/promotion/contract"
 	resellermodule "github.com/dujiao-next/internal/modules/reseller/contract"
 	"github.com/dujiao-next/internal/platform/http/ginutil"
@@ -91,6 +92,9 @@ type CreateOrderRequest struct {
 	AffiliateCode       string                  `json:"affiliate_code"`
 	AffiliateVisitorKey string                  `json:"affiliate_visitor_key"`
 	ManualFormData      map[string]jsonmap.JSON `json:"manual_form_data"`
+	InvoiceRequested    bool                    `json:"invoice_requested"`
+	InvoiceProfileID    uint                    `json:"invoice_profile_id"`
+	InvoiceType         string                  `json:"invoice_type"`
 }
 
 // CreateGuestOrderRequest 游客订单预览请求体。
@@ -103,6 +107,9 @@ type CreateGuestOrderRequest struct {
 	AffiliateVisitorKey string                            `json:"affiliate_visitor_key"`
 	ManualFormData      map[string]jsonmap.JSON           `json:"manual_form_data"`
 	CaptchaPayload      captchahttp.CaptchaPayloadRequest `json:"captcha_payload"`
+	InvoiceRequested    bool                              `json:"invoice_requested"`
+	InvoiceProfileID    uint                              `json:"invoice_profile_id"`
+	InvoiceType         string                            `json:"invoice_type"`
 }
 
 // CreateOrderItem 创建/预览订单项。
@@ -123,6 +130,9 @@ type CreateOrderInput struct {
 	AffiliateVisitorKey string
 	ClientIP            string
 	ManualFormData      map[string]jsonmap.JSON
+	InvoiceRequested    bool
+	InvoiceProfileID    uint
+	InvoiceType         string `json:"invoice_type"`
 }
 
 // CreateGuestOrderInput 游客订单预览输入。
@@ -137,10 +147,16 @@ type CreateGuestOrderInput struct {
 	AffiliateVisitorKey string
 	ClientIP            string
 	ManualFormData      map[string]jsonmap.JSON
+	InvoiceRequested    bool
+	InvoiceProfileID    uint
+	InvoiceType         string `json:"invoice_type"`
 }
 
 // OrderPreview 订单金额预览。
 type OrderPreview struct {
+	InvoiceRequested        bool               `json:"invoice_requested"`
+	InvoiceTaxRate          money.Amount       `json:"invoice_tax_rate"`
+	InvoiceTaxAmount        money.Amount       `json:"invoice_tax_amount"`
 	Currency                string             `json:"currency"`
 	OriginalAmount          money.Amount       `json:"original_amount"`
 	MemberDiscountAmount    money.Amount       `json:"member_discount_amount"`
@@ -210,6 +226,9 @@ func (h *PreviewHandler) PreviewOrder(c *gin.Context) {
 		AffiliateVisitorKey: req.AffiliateVisitorKey,
 		ClientIP:            c.ClientIP(),
 		ManualFormData:      req.ManualFormData,
+		InvoiceRequested:    req.InvoiceRequested,
+		InvoiceProfileID:    req.InvoiceProfileID,
+		InvoiceType:         req.InvoiceType,
 	})
 	if err != nil {
 		respondUserOrderPreviewError(c, err)
@@ -237,6 +256,9 @@ func (h *PreviewHandler) PreviewGuestOrder(c *gin.Context) {
 		AffiliateVisitorKey: req.AffiliateVisitorKey,
 		ClientIP:            c.ClientIP(),
 		ManualFormData:      req.ManualFormData,
+		InvoiceRequested:    req.InvoiceRequested,
+		InvoiceProfileID:    req.InvoiceProfileID,
+		InvoiceType:         req.InvoiceType,
 	})
 	if err != nil {
 		respondGuestOrderPreviewError(c, err)
@@ -261,6 +283,10 @@ type mappedError struct {
 }
 
 func respondWithMappedError(c *gin.Context, err error, rules []mappedError, fallbackCode int, fallbackKey string) {
+	if errors.Is(err, invoicedomain.ErrInvalid) || errors.Is(err, invoicedomain.ErrNotFound) || errors.Is(err, invoicedomain.ErrUnavailable) {
+		ginutil.RespondError(c, response.CodeBadRequest, "error.invoice_invalid", nil)
+		return
+	}
 	if retryAfter := retryAfterSeconds(err); retryAfter > 0 {
 		c.Header("Retry-After", strconv.FormatInt(retryAfter, 10))
 		locale := i18n.ResolveLocale(c)

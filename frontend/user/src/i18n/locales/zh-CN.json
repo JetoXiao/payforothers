@@ -1,6 +1,6 @@
 {
   "common": {
-    "siteName": "Dujiao-Next",
+    "siteName": "GptPayNow",
     "loading": "加载中...",
     "error": "错误",
     "success": "成功",
@@ -49,7 +49,15 @@
     "products": "商品中心",
     "blog": "博客",
     "notice": "公告",
-    "about": "关于"
+    "about": "关于",
+    "tutorial": "充值教程",
+    "redemption": "卡密兑换"
+  },
+  "tutorial": {
+    "backHome":"返回首页","title":"ChatGPT 充值与兑换教程","subtitle":"从购买前检查、套餐选择到卡密兑换和售后处理，一篇教程说明完整流程。具体可用范围以商品详情和订单页面为准。","updated":"适用于当前商品流程","readTime":"阅读约 5 分钟","contents":"教程目录","chooseProduct":"返回首页选购",
+    "contentsItems":{"before":"购买前须知","choose":"如何选购","purchase":"下单流程","redeem":"兑换与确认","troubleshoot":"常见问题","aftercare":"售后规则"},
+    "sections":{"before":{"title":"购买前须知","intro":"请在付款前确认账号和商品条件。充值类商品的可用地区、当前订阅状态和兑换方式可能不同。"},"choose":{"title":"如何选择套餐","intro":"按实际使用强度选择，先确认当前账号状态，再决定 Go、Plus 或 Pro。"},"purchase":{"title":"选购与下单流程","intro":"商品详情页会展示价格、规格、交付方式和当前库存；请以订单页信息为准。"},"redeem":{"title":"兑换与到账确认","intro":"卡密类商品由你在自己的账号中完成兑换。我们不会要求你提供 ChatGPT 密码、Cookie、Session Token 或验证码。","note":"如果商品页面写明需要人工处理，请只按订单页面提交必要的非登录信息；不要在聊天工具中发送密码、验证码或恢复码。"},"troubleshoot":{"title":"常见问题排查"},"aftercare":{"title":"售后规则","intro":"售后以订单页面和商品详情的具体说明为准。遇到问题时保留订单号、付款凭证和页面提示，便于快速处理。"}},
+    "items":{"before":{"account":"准备一个可以正常登录的 ChatGPT 账号。","status":"确认账号当前没有不兼容的有效订阅；已有订阅时不要直接购买不支持覆盖的卡密。","region":"确认商品标注的地区、渠道和账号条件与你的账号匹配。","noCredentials":"不要向任何人提供密码、Cookie、Session Token、短信验证码或 2FA 恢复码。"},"choose":{"goTitle":"Go","goText":"适合轻量使用和预算有限的场景，先确认商品页面的地区与兑换条件。","plusTitle":"Plus","plusText":"适合日常写作、学习、办公和常规代码使用。","proTitle":"Pro","proText":"适合高频使用、重度研究、长任务和更高用量需求，购买前确认对应倍率与限制。"},"purchase":{"one":"打开首页，查看商品标题、价格、规格、交付方式和售后说明。","two":"选择与你的账号状态匹配的商品，核对地区、周期和是否支持覆盖。","three":"点击立即购买，填写结算页要求的信息并完成支付。","four":"支付后保存订单号；卡密自动交付或人工处理状态以订单页为准。"},"redeem":{"one":"打开订单详情，复制卡密或查看官方兑换说明。","two":"在自己的 ChatGPT 账号中按页面提示完成兑换，不要把登录凭据交给第三方。","three":"兑换后刷新 ChatGPT，退出并重新登录，再到套餐/订阅页面核对权益。","four":"如果权益没有立即显示，先等待一段时间并按订单页指引重试，不要重复付款。"},"faq":{"failedQ":"卡密兑换失败怎么办？","failedA":"先核对账号状态、地区和卡密是否完整；等待页面提示的重试时间后再试。仍失败时联系售后并提供订单号和错误提示。","pendingQ":"付款后没有立即收到卡密怎么办？","pendingA":"先到订单查询页确认支付状态和交付状态。不要重复付款；超过页面预计时间后再联系客服。","noPlanQ":"充值成功但没有显示权益怎么办？","noPlanA":"退出 ChatGPT 后重新登录，检查套餐/订阅页面和订单状态。官方显示可能存在延迟。","wrongRegionQ":"地区不匹配还能兑换吗？","wrongRegionA":"不要强行尝试。地区或渠道不匹配可能导致兑换失败，先联系售后确认可用方案。"},"aftercare":{"one":"售后只处理订单页面和商品规则覆盖的问题。","two":"卡密类商品建议购买后尽快兑换，不要长期囤货。","three":"申请售后时提供订单号、支付凭证、商品名称和页面错误提示。","four":"因用户账号状态、地区不符、误购或自行泄露卡密造成的问题，按商品详情页退款规则处理。"}}
   },
   "vault": {
     "hero": {
@@ -108,14 +116,18 @@
     "description": "你访问的页面可能已移动、删除，或链接地址有误。你可以继续浏览 {site} 的其他内容。",
     "quickLinksTitle": "你可能会用到",
     "backHome": "返回首页",
-    "backPrevious": "返回上一页"
+    "backPrevious": "返回上一页",
+    "tutorial": "充值教程",
+    "orders": "订单查询"
   },
   "home": {
     "hero": {
-      "title": "Dujiao-Next · D&N",
-      "subtitle": "专业的产品与服务提供商",
+      "title": "精选 GPT 方案，简单拥有。",
+      "subtitle": "ChatGPT 订阅服务，从日常问答、图像创作到代码和深度研究。",
       "cta": "浏览商品",
-      "badge": "新一代数字商店"
+      "badge": "GPT PRODUCTS · DIGITAL SERVICES",
+      "visualFallback": "AI 产品空间",
+      "abilities": {"reasoningTitle":"深度推理","reasoningText":"拆解复杂问题，梳理思路与多步任务。","latestTitle":"研究与分析","latestText":"整理资料、提炼要点，辅助研究与决策。","imagesTitle":"图像理解与创作","imagesText":"分析图片、创作视觉内容，让想法更直观。","codeTitle":"编程协作","codeText":"从代码编写、解释到调试，推进开发任务。","note":"能力展示仅供参考；可用模型、功能与额度以具体套餐及官方账号页面为准。"}
     },
     "stats": {
       "activeUsers": "活跃用户",
@@ -124,10 +136,21 @@
       "support": "技术支持"
     },
     "featured": {
-      "title": "精选商品",
-      "description": "探索我们精心挑选的优质数字资产系列。",
+      "eyebrow": "GPT PRODUCTS",
+      "title": "GPT 订阅方案",
+      "description": "选择适合你的 GPT 订阅方案。",
+      "countLabel": "款产品",
       "empty": "暂无商品",
       "viewAll": "查看全部商品"
+    },
+    "seoIntro": {"title":"ChatGPT 与 GPT 订阅充值服务","description":"GptPayNow 提供 ChatGPT Plus、GPT Pro 等 GPT 订阅方案，公开展示套餐价格、规格、购买须知与交付说明。用户可在线选购、完成支付并查询订单状态。","scope":"购买前请阅读对应商品详情和 ChatGPT 充值教程；可用地区、账号条件、模型功能与服务周期以商品页面及官方账号页面为准。","keywords":"ChatGPT代充, ChatGPT充值, GPT Plus充值, GPT Pro充值, AI订阅服务"},
+    "trust": {
+      "selectionTitle": "专注 GPT",
+      "selectionDescription": "围绕 ChatGPT 的订阅方案，清晰选择、快速交付。",
+      "orderTitle": "订单清晰可查",
+      "orderDescription": "支付、订单与交付状态都可随时查询。",
+      "supportTitle": "售后支持",
+      "supportDescription": "遇到问题时，我们会及时跟进处理。"
     },
     "cta": {
       "title": "准备好开始了吗？",
@@ -212,8 +235,8 @@
   },
   "about": {
     "title": "关于我们",
-    "subtitle": "了解Dujiao-Next",
-    "introduction": "Dujiao-Next（D&N）是一家专业的在线工作室，致力于为客户提供优质的产品和服务。我们以创新、专业、高效为核心价值观，不断追求卓越，为客户创造价值。",
+    "subtitle": "了解 GptPayNow",
+    "introduction": "GptPayNow 专注于提供清晰、可靠的 ChatGPT 订阅与数字服务。",
     "ourServices": "我们的服务",
     "service1": "优质商品推荐与销售",
     "service2": "专业的售前咨询服务",
@@ -241,6 +264,7 @@
     "me": "我的"
   },
   "personalCenter": {
+    "invoice":{"title":"发票信息","subtitle":"维护多个开票抬头，提交开票时选择对应信息。","add":"新增开票信息","empty":"暂无开票信息","default":"默认","name":"发票抬头","taxpayerId":"统一社会信用代码/税号","address":"注册地址","phone":"注册电话","bankName":"开户行","bankAccount":"银行账号","email":"接收发票邮箱","save":"保存"},
     "title": "个人中心",
     "subtitle": "管理账号资料、安全设置与最近订单",
     "tabs": {
@@ -1101,6 +1125,7 @@
     "minPurchaseNotMet": "该商品单次下单至少需购买 {count} 件"
   },
   "checkout": {
+    "invoice":{"title":"申请发票","hint":"商品标价为未含税价；开票后将由人工处理并发送到预留邮箱。","selectProfile":"选择开票信息","manageHint":"请先在个人中心维护企业/个人抬头、税号、地址电话、开户行账号和邮箱。","manage":"前往个人中心维护","pendingNotice":"提交后预计 1–2 个工作日处理，已开票订单不可重复申请。","tax":"开票税额"},
     "title": "订单结算",
     "subtitle": "确认订单信息并提交",
     "empty": "购物车为空",
@@ -1239,6 +1264,7 @@
     "changeMethod": "更换支付方式",
     "refreshStatus": "刷新订单状态",
     "pollingHint": "正在检查支付状态...",
+    "upstreamFulfillmentHint": "付款成功后，系统会自动准备交付内容，可能需要短暂处理。订单详情页会自动更新，无需手动刷新，请勿重复付款。",
     "selected": "已选择",
     "redirectOpened": "支付页面已在新窗口打开",
     "redirectOpenedTelegram": "支付链接已打开，请完成支付后返回当前页面刷新状态",
@@ -1636,11 +1662,14 @@
       "delivered": "已交付"
     },
     "fulfillmentCopy": "复制内容",
+    "redemptionUrl": "兑换网址",
+    "redemptionCode": "兑换卡密",
     "fulfillmentCopied": "已复制",
     "fulfillmentDownload": "下载交付内容",
     "fulfillmentTotalLines": "共 {count} 条交付内容",
     "fulfillmentDownloading": "下载中...",
-    "fulfillmentTruncatedHint": "当前仅显示前 100 条预览，请下载获取完整交付内容"
+    "fulfillmentTruncatedHint": "当前仅显示前 100 条预览，请下载获取完整交付内容",
+    "autoFulfillmentProcessing": "付款已确认，正在自动采购并准备兑换卡密。页面会自动更新，无需手动刷新，请勿重复下单。"
   },
   "guestOrders": {
     "title": "游客订单查询",
@@ -1707,7 +1736,9 @@
     "addCartStockExceeded": "该规格库存不足，最多可购买 {count} 件",
     "addCartStockExceededWithCart": "该规格库存不足，最多可购买 {count} 件（购物车中已有 {cartCount} 件）",
     "addCartLimitExceeded": "当前商品单次最多可购买 {count} 件",
-    "addCartLimitExceededWithCart": "当前商品单次最多可购买 {count} 件（购物车中已有 {cartCount} 件）"
+    "addCartLimitExceededWithCart": "当前商品单次最多可购买 {count} 件（购物车中已有 {cartCount} 件）",
+    "purchaseGuideTitle":"购买说明",
+    "purchaseGuide":{"beforeTitle":"购买前确认","beforeText":"确认地区、周期和账号当前订阅状态；不同规格不能随意互换。","deliveryTitle":"交付与兑换","deliveryText":"支付后以订单页状态为准，卡密请在自己的 ChatGPT 账号中按官方提示兑换。","accountTitle":"账号安全","accountText":"我们不会要求 ChatGPT 密码、Cookie、Session Token、验证码或恢复码。","supportTitle":"售后处理","supportText":"遇到兑换失败、错发或未到账，请保留订单号和脱敏截图后提交售后。"}
   },
   "quickBuy": {
     "title": "快速购买",

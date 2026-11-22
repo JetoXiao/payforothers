@@ -14,6 +14,18 @@ export function processHtmlForDisplay(html: string): string {
     })
 }
 
+/** Replace legacy redemption links with the current public site setting. */
+export function replaceRedemptionUrlForDisplay(html: string, redemptionUrl: string): string {
+    const target = String(redemptionUrl || '').trim()
+    if (!html || !target) return html
+    return html.replace(/https?:\/\/[^\s"'<>]+/gi, (url) => {
+        const normalized = url.replace(/[),.;]+$/g, '')
+        return /(?:966qjy\.xyz|redeem\.gptpaynow\.com|redemption|redeem)/i.test(normalized)
+            ? target
+            : url
+    })
+}
+
 /**
  * 将 HTML 内容中的图片路径转换为存储用的相对路径
  * http://domain/uploads/xxx -> /uploads/xxx

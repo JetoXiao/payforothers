@@ -64,6 +64,17 @@ export function useCheckout() {
   })
   const totalItems = computed(() => cartItems.value.reduce((sum, item) => sum + item.quantity, 0))
   const couponCode = ref('')
+  const invoiceRequested = ref(false)
+  const invoiceProfileId = ref<number | null>(null)
+  const invoiceProfiles = ref<any[]>([])
+  const invoiceType = ref('ordinary')
+  const invoiceConfig = computed(() => appStore.config?.invoice_config || { enabled: true, ordinary_tax_rate: '3.00', special_tax_rate: '8.00', support_wechat: 'think-more-9' })
+  const invoiceProfileValid = computed(() => {
+    if (!invoiceRequested.value) return true
+    if (!invoiceConfig.value.enabled || !userAuthStore.isAuthenticated || isResellerTenant.value) return false
+    const p = invoiceProfiles.value.find(p => Number(p.id) === Number(invoiceProfileId.value))
+    return !!p && (invoiceType.value !== 'special' || ['address','phone','bank_name','bank_account'].every(k => String(p[k] || '').trim()))
+  })
   const normalizedCouponCode = computed(() => couponCode.value.trim())
   const submitting = ref(false)
   const error = ref('')
@@ -579,6 +590,7 @@ export function useCheckout() {
   }
 
   const canSubmit = computed(() => {
+    if (!invoiceProfileValid.value) return false
     if (syncingStock.value) return false
     if (submitting.value) return false
     if (cartItems.value.length === 0) return false
@@ -602,6 +614,7 @@ export function useCheckout() {
   })
 
   const submitBlockedReason = computed(() => {
+    if (!invoiceProfileValid.value) return t('invoice.needProfile')
     if (syncingStock.value) return t('checkout.stockSyncing')
     if (cartItems.value.length === 0) return t('checkout.errors.emptyCart')
     if (!manualFormValidation.value.valid) {
@@ -664,6 +677,9 @@ export function useCheckout() {
     affiliate_visitor_key: getAffiliateVisitorKey() || undefined,
     items: buildItemsPayload(),
     manual_form_data: buildManualFormDataPayload(),
+    invoice_requested: invoiceRequested.value,
+    invoice_profile_id: invoiceProfileId.value || undefined,
+    invoice_type: invoiceRequested.value ? invoiceType.value : undefined,
   })
 
   const loadOrderPaymentChannels = async () => {
@@ -868,7 +884,7 @@ export function useCheckout() {
   }
 
   watch(
-    () => [cartItems.value, manualFormFingerprint.value, normalizedCouponCode.value, checkoutMode.value, guestEmail.value, guestPassword.value, userAuthStore.isAuthenticated],
+    () => [cartItems.value, manualFormFingerprint.value, normalizedCouponCode.value, checkoutMode.value, guestEmail.value, guestPassword.value, userAuthStore.isAuthenticated, invoiceRequested.value, invoiceProfileId.value, invoiceType.value],
     () => {
       debouncedLoadPreview()
     },
@@ -923,9 +939,15 @@ export function useCheckout() {
       await appStore.loadConfig()
     }
     await syncCartStockSnapshots()
+    if (userAuthStore.isAuthenticated) { try { invoiceProfiles.value = (await userOrderAPI.invoiceProfiles()).data.data || []; const fallback = invoiceProfiles.value.find((item:any)=>item.is_default) || invoiceProfiles.value[0]; if (fallback) invoiceProfileId.value = Number(fallback.id) } catch { invoiceProfiles.value = [] } }
     debouncedLoadPreview()
     loadWalletBalance()
   })
+
+  const reloadInvoiceProfiles = async () => {
+    try { invoiceProfiles.value = (await userOrderAPI.invoiceProfiles()).data.data || [] }
+    catch (err: any) { error.value = err.message || t('invoice.loadFailed') }
+  }
 
   onUnmounted(() => {
     debouncedLoadPreview.cancel()
@@ -1132,6 +1154,10 @@ export function useCheckout() {
     manualFieldError,
     // coupon
     couponCode,
+    invoiceRequested,
+    invoiceProfileId,
+    invoiceProfiles,
+    invoiceType, invoiceConfig, invoiceProfileValid, reloadInvoiceProfiles,
     isResellerTenant,
     // mode select / guest
     checkoutMode,
@@ -1148,6 +1174,7 @@ export function useCheckout() {
     handleGuestCaptchaConfigStale,
     // preview amounts
     previewCurrency,
+    preview,
     previewOriginal,
     previewCoupon,
     previewPromotion,
