@@ -37,7 +37,17 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	out := make([]gin.H, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, gin.H{"item": row, "effective_sale_price": row.EffectiveSalePrice(), "profit_amount": row.ProfitAmount(), "profit_rate": row.ProfitRate(), "inventory": row.Inventory()})
+		out = append(out, gin.H{
+			"id": row.ID, "product_id": row.ProductID, "sku_id": row.SKUID,
+			"product_slug": row.ProductSlug, "title": row.TitleJSON, "images": row.ImagesJSON,
+			"sku_code": row.SKUCode, "spec_values": row.SpecValuesJSON,
+			"product_active": row.ProductActive, "sku_active": row.SKUActive,
+			"product_price": row.ProductPrice, "cost_price": row.CostPrice, "sale_price": row.SalePrice,
+			"follow_product_price": row.FollowProductPrice,
+			"manual_stock":         row.ManualStock, "manual_locked": row.ManualLocked, "manual_sold": row.ManualSold,
+			"auto_stock": row.AutoStock, "effective_sale_price": row.EffectiveSalePrice(),
+			"profit_amount": row.ProfitAmount(), "profit_rate": row.ProfitRate(), "inventory": row.Inventory(),
+		})
 	}
 	response.SuccessWithPage(c, out, response.BuildPagination(page, size, total))
 }

@@ -19,10 +19,14 @@ func (s *Store) List(f productcontract.Filter) ([]productcatalog.Item, int64, er
 	q := s.db.Model(&productcatalog.Item{})
 	if f.Search != "" {
 		like := "%" + strings.TrimSpace(f.Search) + "%"
-		q = q.Where("product_slug LIKE ? OR sku_code LIKE ?", like, like)
+		q = q.Where("product_slug LIKE ? OR sku_code LIKE ? OR title_json LIKE ?", like, like, like)
 	}
 	if f.ProductActive != nil {
-		q = q.Where("product_active = ?", *f.ProductActive)
+		if *f.ProductActive {
+			q = q.Where("product_active = ? AND sku_active = ?", true, true)
+		} else {
+			q = q.Where("product_active = ? OR sku_active = ?", false, false)
+		}
 	}
 	if f.FollowPrice != nil {
 		q = q.Where("follow_product_price = ?", *f.FollowPrice)
@@ -43,9 +47,6 @@ func (s *Store) List(f productcontract.Filter) ([]productcatalog.Item, int64, er
 }
 func (s *Store) Sync(includeInactive bool) (int, error) {
 	q := s.db.Model(&productdomain.Product{}).Where("products.deleted_at IS NULL").Preload("SKUs", func(db *gorm.DB) *gorm.DB { return db.Where("deleted_at IS NULL").Order("id") })
-	if !includeInactive {
-		q = q.Where("products.is_active = ?", true)
-	}
 	products := []productdomain.Product{}
 	if err := q.Find(&products).Error; err != nil {
 		return 0, err
@@ -56,12 +57,16 @@ func (s *Store) Sync(includeInactive bool) (int, error) {
 			var item productcatalog.Item
 			err := s.db.Where("product_id = ? AND sku_id = ?", p.ID, sku.ID).First(&item).Error
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				item = productcatalog.Item{ProductID: p.ID, SKUID: sku.ID, FollowProductPrice: true, CreatedAt: time.Now()}
+				if !includeInactive && (!p.IsActive || !sku.IsActive) {
+					continue
+				}
+				item = productcatalog.Item{ProductID: p.ID, SKUID: sku.ID, CostPrice: sku.CostPriceAmount, SalePrice: sku.PriceAmount, FollowProductPrice: true, CreatedAt: time.Now()}
 			} else if err != nil {
 				return count, err
 			}
 			item.ProductSlug = p.Slug
 			item.TitleJSON = p.TitleJSON
+			item.ImagesJSON = p.Images
 			item.SKUCode = sku.SKUCode
 			item.SpecValuesJSON = sku.SpecValuesJSON
 			item.ProductActive = p.IsActive
