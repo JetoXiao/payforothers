@@ -1,6 +1,7 @@
 package userauthhttp
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -105,7 +106,16 @@ func (h *UserLoginHandler) UserRegister(c *gin.Context) {
 		return
 	}
 
-	user, token, expiresAt, err := h.auth.Register(req.Email, req.Password, req.Code, req.AgreementAccepted, emailVerificationEnabled)
+	var user *userdomain.User
+	var token string
+	var expiresAt time.Time
+	if contextual, ok := h.auth.(interface {
+		RegisterWithContext(context.Context, string, string, string, bool, bool) (*userdomain.User, string, time.Time, error)
+	}); ok {
+		user, token, expiresAt, err = contextual.RegisterWithContext(c.Request.Context(), req.Email, req.Password, req.Code, req.AgreementAccepted, emailVerificationEnabled)
+	} else {
+		user, token, expiresAt, err = h.auth.Register(req.Email, req.Password, req.Code, req.AgreementAccepted, emailVerificationEnabled)
+	}
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidEmail):

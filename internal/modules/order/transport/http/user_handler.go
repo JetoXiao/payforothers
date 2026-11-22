@@ -116,7 +116,9 @@ func (h *UserHandler) ListOrders(c *gin.Context) {
 	}
 
 	pagination := response.BuildPagination(page, pageSize, total)
-	response.SuccessWithPage(c, orderpresenter.NewOrderSummaryList(orders), pagination)
+	summaries := orderpresenter.NewOrderSummaryList(orders)
+	attachSummaryContexts(c, orders, summaries, "")
+	response.SuccessWithPage(c, summaries, pagination)
 }
 
 // OrderStats 按状态聚合当前用户订单数量（基于全量数据，仅复用关键词筛选）
@@ -158,6 +160,10 @@ func (h *UserHandler) GetOrderByOrderNo(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
 		return
 	}
+	if !ginutil.PaymentContextAllowsOrder(c, orderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
+		return
+	}
 
 	order, err := h.orders.GetOrderByUserOrderNoForTenant(tenantFromRequest(c), orderNo, uid)
 	if err != nil {
@@ -170,6 +176,7 @@ func (h *UserHandler) GetOrderByOrderNo(c *gin.Context) {
 	}
 
 	orderDetail := orderpresenter.NewOrderDetailTruncated(order)
+	orderDetail.PaymentContext = attachPaymentContext(c, order, "")
 	enrichOrderWithAllowedChannels(h.payments, order, &orderDetail)
 	enrichOrderWithRefundRecords(h.refunds, order, &orderDetail)
 	response.Success(c, orderDetail)
@@ -222,6 +229,10 @@ func (h *UserHandler) GetOrderPaymentChannels(c *gin.Context) {
 	}
 	if amount.LessThanOrEqual(decimal.Zero) {
 		response.Success(c, []map[string]interface{}{})
+		return
+	}
+	if !ginutil.PaymentContextAllowsOrder(c, strings.TrimSpace(req.OrderNo)) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
 		return
 	}
 

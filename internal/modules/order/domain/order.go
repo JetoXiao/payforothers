@@ -10,6 +10,8 @@ import (
 
 // Order 订单表
 type Order struct {
+	SourceSiteID            uint         `gorm:"not null;default:0;index" json:"source_site_id"`
+	SourceDomain            string       `gorm:"size:253;not null;default:'';index" json:"source_domain"`
 	ID                      uint         `gorm:"primarykey" json:"id"`                                                             // 主键
 	OrderNo                 string       `gorm:"uniqueIndex;not null" json:"order_no"`                                             // 订单编号
 	ParentID                *uint        `gorm:"index;index:idx_orders_risk_pending,priority:4" json:"parent_id,omitempty"`        // 父订单ID

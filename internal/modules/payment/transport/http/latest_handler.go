@@ -81,6 +81,10 @@ func (h *LatestHandler) GetGuestLatestPayment(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
 		return
 	}
+	if !ginutil.PaymentContextAllowsOrder(c, query.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
+		return
+	}
 	email, password, ok := ginutil.GetGuestCredentials(c)
 	if !ok || email == "" {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.guest_email_required", nil)
@@ -113,6 +117,10 @@ func (h *LatestHandler) GetLatestPayment(c *gin.Context) {
 	var query LatestPaymentQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.bad_request", err)
+		return
+	}
+	if !ginutil.PaymentContextAllowsOrder(c, query.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
 		return
 	}
 

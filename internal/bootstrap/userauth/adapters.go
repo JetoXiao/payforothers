@@ -412,6 +412,11 @@ func (a userLoginTransportAdapter) GetEmailVerificationEnabled(defaultValue bool
 	return a.settings.GetEmailVerificationEnabled(defaultValue)
 }
 
+func (a userLoginTransportAdapter) RegisterWithContext(ctx context.Context, email, password, code string, agreementAccepted, emailVerificationEnabled bool) (*userdomain.User, string, time.Time, error) {
+	user, token, expiresAt, err := a.auth.RegisterWithContext(ctx, email, password, code, agreementAccepted, emailVerificationEnabled)
+	return user, token, expiresAt, mapUserAuthTransportError(err)
+}
+
 func (a userLoginTransportAdapter) Register(email, password, code string, agreementAccepted, emailVerificationEnabled bool) (*userdomain.User, string, time.Time, error) {
 	user, token, expiresAt, err := a.auth.Register(email, password, code, agreementAccepted, emailVerificationEnabled)
 	return user, token, expiresAt, mapUserAuthTransportError(err)

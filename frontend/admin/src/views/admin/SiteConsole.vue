@@ -1,0 +1,169 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { sitesAPI, type Site, type SiteGrant, type SiteScope, type SiteOverview, type SiteUser, type SiteOrder, type SiteVisit } from '@/api/sites'
+import { adminAPI } from '@/api/admin'
+import { applySiteMenuPreset, matchSiteMenuPreset, siteMenuPresets } from '@/utils/sitePermissions'
+
+type Tab = 'overview' | 'users' | 'orders' | 'visits' | 'settings'
+const scope = ref<SiteScope>({ restricted: true, is_super: false, grants: [], sites: [], base_domain: '' })
+const selected = ref('')
+const tab = ref<Tab>('overview')
+const tabs: { id: Tab; name: string }[] = [{ id: 'overview', name: '经营统计' }, { id: 'users', name: '注册用户' }, { id: 'orders', name: '来源订单' }, { id: 'visits', name: '访问记录' }, { id: 'settings', name: '站点与管理员' }]
+const day = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
+const from = ref(day(new Date(Date.now() - 29 * 86400000)))
+const to = ref(day(new Date()))
+const keyword = ref('')
+const status = ref('')
+const page = ref(1)
+const total = ref(0)
+const overview = ref<SiteOverview | null>(null)
+const users = ref<SiteUser[]>([])
+const orders = ref<SiteOrder[]>([])
+const visits = ref<SiteVisit[]>([])
+const detail = ref<SiteOrder | null>(null)
+const busy = ref(false)
+const message = ref('')
+const admins = ref<{ id: number; username: string; is_super: boolean }[]>([])
+const adminID = ref('')
+const selectedAdmin = computed(() => admins.value.find(admin => String(admin.id) === adminID.value))
+const grants = ref<SiteGrant[]>([])
+const grantsLoaded = ref(false)
+let queryVersion = 0
+let grantVersion = 0
+let detailVersion = 0
+const grantsForAdmin = ref('')
+const editing = ref<Partial<Site>>({ name: '', domain: '', enabled: true })
+const params = computed(() => ({ site_id: selected.value === '' ? undefined : Number(selected.value), from: from.value, to: to.value, keyword: keyword.value, status: status.value, page: page.value, page_size: 20 }))
+const can = (menu: Tab) => scope.value.is_super || (menu !== 'settings' && scope.value.grants.some(g => g.site_id === Number(selected.value) && g[menu]))
+const menus = computed(() => tabs.filter(t => can(t.id)))
+const title = (value: Record<string, string>) => value['zh-CN'] || Object.values(value)[0] || ''
+const fmt = (value: string) => new Date(value).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+const clearData = () => { overview.value = null; users.value = []; orders.value = []; visits.value = []; detail.value = null; total.value = 0 }
+async function load() {
+  const version = ++queryVersion
+  ++detailVersion
+  clearData(); message.value = ''
+  busy.value = false
+  if (!can(tab.value)) tab.value = menus.value[0]?.id || 'overview'
+  if (!can(tab.value) || tab.value === 'settings') return
+  busy.value = true
+  try {
+    const currentTab = tab.value
+    const currentParams = { ...params.value }
+    if (currentTab === 'overview') {
+      const res = await sitesAPI.overview(currentParams)
+      if (version !== queryVersion) return
+      overview.value = res.data.data
+    } else {
+      const res = await sitesAPI[currentTab](currentParams)
+      if (version !== queryVersion) return
+      total.value = res.data.pagination?.total || 0
+      if (tab.value === 'users') users.value = res.data.data
+      if (tab.value === 'orders') orders.value = res.data.data
+      if (tab.value === 'visits') visits.value = res.data.data
+    }
+  } catch (e: any) { if (version === queryVersion) message.value = e.message || '加载失败' } finally { if (version === queryVersion) busy.value = false }
+}
+async function refreshScope() {
+  scope.value = (await sitesAPI.scope()).data.data
+  if (!scope.value.is_super && !scope.value.sites.some(s => String(s.id) === selected.value)) selected.value = String(scope.value.sites[0]?.id || '')
+}
+async function changeTab(value: Tab) { tab.value = value; page.value = 1; keyword.value = ''; status.value = ''; await load() }
+async function search() { page.value = 1; await load() }
+async function showOrder(row: SiteOrder) {
+  const version = ++detailVersion
+  const query = queryVersion
+  message.value = ''; detail.value = null
+  try { const res = await sitesAPI.order(row.id, { ...params.value }); if (version === detailVersion && query === queryVersion) detail.value = res.data.data } catch (e: any) { if (version === detailVersion && query === queryVersion) message.value = e.message }
+}
+async function saveSite() {
+  if (busy.value) return
+  message.value = ''; busy.value = true
+  try { await sitesAPI.saveSite(editing.value); editing.value = { name: '', domain: '', enabled: true }; await refreshScope(); message.value = '站点已保存；DNS 与证书仍需单独配置。' } catch (e: any) { message.value = e.message } finally { busy.value = false }
+}
+async function loadGrants() {
+  const version = ++grantVersion
+  const id = adminID.value
+  grantsForAdmin.value = ''
+  grantsLoaded.value = false; grants.value = []; message.value = ''
+  if (!adminID.value) return
+  try { const res = await sitesAPI.grants(Number(id)); if (version !== grantVersion || id !== adminID.value) return; grants.value = res.data.data.grants; grantsForAdmin.value = id; grantsLoaded.value = true } catch (e: any) { if (version === grantVersion) message.value = e.message }
+}
+function grant(site: Site): SiteGrant {
+  let item = grants.value.find(g => g.site_id === site.id)
+  if (!item) { item = { site_id: site.id, overview: false, users: false, orders: false, visits: false }; grants.value.push(item) }
+  return item
+}
+function setMenuPreset(site: Site, event: Event) {
+  const current = grant(site)
+  Object.assign(current, applySiteMenuPreset(current, (event.target as HTMLSelectElement).value))
+}
+async function saveGrants() {
+  if (!grantsLoaded.value || busy.value || grantsForAdmin.value !== adminID.value) return
+  busy.value = true; message.value = ''
+  try {
+    await sitesAPI.saveGrants(Number(adminID.value), grants.value.filter(g => g.overview || g.users || g.orders || g.visits))
+    message.value = `已保存 ${selectedAdmin.value?.username || adminID.value} 的个人菜单授权，立即生效。同一子站其他管理员的权限保持不变。`
+  } catch (e: any) { message.value = e.message } finally { busy.value = false }
+}
+onMounted(async () => {
+  try { await refreshScope(); if (scope.value.is_super) admins.value = (await adminAPI.listAuthzAdmins()).data.data.filter((a: any) => !a.is_super); await load() } catch (e: any) { message.value = e.message }
+})
+</script>
+
+<template>
+  <section class="site-console">
+    <header><h1>子站管理</h1><p>注册归属与下单归属分别记录，账号全站通用。仅显示当前授权范围的数据。</p></header>
+    <p v-if="!scope.is_super && !scope.sites.length" class="notice">当前账号尚未分配站点或菜单，请联系总管理员。</p>
+    <div class="filters">
+      <label>站点<select v-model="selected" @change="search"><option v-if="scope.is_super" value="">全部来源</option><option v-if="scope.is_super" value="0">历史 / 未登记来源</option><option v-for="site in scope.sites" :key="site.id" :value="String(site.id)">{{ site.name }} · {{ site.domain }}{{ site.enabled ? '' : '（停用）' }}</option></select></label>
+      <label>起始日期<input v-model="from" type="date" /></label><label>结束日期<input v-model="to" type="date" /></label>
+      <button :disabled="busy" @click="search">{{ busy ? '加载中…' : '查询' }}</button>
+    </div>
+    <nav><button v-for="item in menus" :key="item.id" :class="{ active: tab === item.id }" @click="changeTab(item.id)">{{ item.name }}</button></nav>
+    <p v-if="message" role="status" class="notice">{{ message }}</p>
+    <template v-if="tab === 'overview' && overview">
+      <div class="metrics"><article><small>本期注册用户</small><strong>{{ overview.registered_users }}</strong></article><article><small>每日独立浏览器访问合计</small><strong>{{ overview.browser_visits }}</strong></article></div>
+      <div class="table-wrap"><table><thead><tr><th>币种</th><th>订单数</th><th>已付款</th><th>销售金额</th><th>退款</th><th>净收入</th><th>成本</th><th>支付手续费</th><th>估算毛利</th></tr></thead><tbody><tr v-for="row in overview.by_currency" :key="row.currency"><td>{{ row.currency }}</td><td>{{ row.orders }}</td><td>{{ row.paid_orders }}</td><td>{{ row.sales }}</td><td>{{ row.refunds }}</td><td>{{ row.net_revenue }}</td><td>{{ row.cost }}</td><td>{{ row.payment_fees }}</td><td>{{ row.profit }}</td></tr></tbody></table></div>
+      <p v-if="!overview.by_currency.length">当前范围没有订单。</p>
+      <p v-for="row in overview.by_currency.filter(r => r.missing_cost_orders > 0)" :key="row.currency" class="notice">{{ row.currency }} 中有 {{ row.missing_cost_orders }} 笔已付订单包含零成本商品，毛利可能高估，请核对成本。</p>
+      <p class="muted">按订单创建日期统计截至现在的累计金额，仅计主订单，不重复计算拆单。净收入扣除退款及发票税额；成本使用订单项快照，退款不自动冲回成本。支付手续费仅计算商家承担部分并扣已退手续费。毛利不含人工、营销及其他税负，多币种分别统计。日期时区：Asia/Shanghai。</p>
+    </template>
+    <template v-if="tab === 'users' || tab === 'orders' || tab === 'visits'">
+      <div v-if="tab !== 'visits'" class="filters"><input v-model="keyword" :placeholder="tab === 'orders' ? '搜索订单号' : '搜索注册邮箱或昵称'" @keyup.enter="search" /><select v-if="tab === 'orders'" v-model="status"><option value="">全部订单状态</option><option v-for="s in ['pending_payment', 'paid', 'fulfilling', 'delivered', 'completed', 'partially_refunded', 'refunded', 'canceled']" :key="s" :value="s">{{ s }}</option></select><button @click="search">搜索</button></div>
+      <div class="table-wrap"><table v-if="tab === 'users'"><thead><tr><th>ID</th><th>注册邮箱</th><th>昵称</th><th>注册来源</th><th>注册时间</th></tr></thead><tbody><tr v-for="row in users" :key="row.id"><td>{{ row.id }}</td><td>{{ row.email }}</td><td>{{ row.display_name }}</td><td>{{ row.registration_domain || '未知' }}</td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
+      <table v-if="tab === 'orders'"><thead><tr><th>订单</th><th>来源</th><th>买家</th><th>状态</th><th>金额</th><th>退款</th><th>创建时间</th></tr></thead><tbody><tr v-for="row in orders" :key="row.id"><td><button @click="showOrder(row)">{{ row.order_no }}</button></td><td>{{ row.source_domain || '未知' }}</td><td>{{ row.buyer_email }}</td><td>{{ row.status }}</td><td>{{ row.currency }} {{ row.total_amount }}</td><td>{{ row.refunded_amount }}</td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
+      <table v-if="tab === 'visits'"><thead><tr><th>站点域名</th><th>日期</th><th>关联用户 ID</th><th>首次访问</th><th>最后访问</th></tr></thead><tbody><tr v-for="row in visits" :key="row.id"><td>{{ row.domain }}</td><td>{{ row.day }}</td><td>{{ row.user_id || '匿名' }}</td><td>{{ fmt(row.first_seen_at) }}</td><td>{{ fmt(row.last_seen_at) }}</td></tr></tbody></table></div>
+      <p v-if="!busy && total === 0">当前范围没有记录。</p><div class="filters"><button :disabled="page <= 1 || busy" @click="page--; load()">上一页</button><span>第 {{ page }} 页 · 共 {{ total }} 条</span><button :disabled="page * 20 >= total || busy" @click="page++; load()">下一页</button></div>
+      <p v-if="tab === 'visits'" class="muted">同一浏览器、同一站点、同一天去重；这不是人数统计。清除 Cookie、换浏览器或设备会产生新的标识。仅记录本站访问，不显示用户在其他站点的记录。</p>
+      <article v-if="detail" class="detail"><button class="close" @click="detailVersion++; detail = null">关闭详情</button><h2>{{ detail.order_no }}</h2><p>{{ detail.source_domain }} · {{ detail.status }} · {{ detail.currency }} {{ detail.total_amount }}</p><p>订单联系邮箱：{{ detail.buyer_email }}</p><ul><li v-for="(item, i) in detail.items" :key="i">{{ title(item.title) }} × {{ item.quantity }}</li></ul></article>
+    </template>
+    <template v-if="tab === 'settings' && scope.is_super">
+      <h2>站点管理</h2><p class="muted">域名创建后不可更改或复用。停用保留历史数据，DNS、泛域名证书和反向代理需由运维另行配置。前端 API 必须使用相同域名。</p>
+      <div class="filters"><input v-model="editing.name" placeholder="站点名称" maxlength="100" /><input v-model="editing.domain" :disabled="Boolean(editing.id)" :placeholder="`abc.${scope.base_domain}`" /><label><input v-model="editing.enabled" type="checkbox" />启用</label><button :disabled="busy || !editing.name || !editing.domain" @click="saveSite">{{ editing.id ? '保存修改' : '创建站点' }}</button><button v-if="editing.id" @click="editing = { name: '', domain: '', enabled: true }">取消</button></div>
+      <div class="table-wrap"><table><thead><tr><th>名称</th><th>域名</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="site in scope.sites" :key="site.id"><td>{{ site.name }}</td><td>{{ site.domain }}</td><td>{{ site.enabled ? '启用' : '停用' }}</td><td><button @click="editing = { ...site }">编辑</button></td></tr></tbody></table></div>
+      <h2>管理员个人菜单授权</h2>
+      <p class="muted">先在 <RouterLink to="/authz" class="permission-link">权限管理</RouterLink> 创建普通管理员，再选择具体账号配置菜单。同一子站可有多名管理员，每个人使用独立授权。例如 A 只看订单、B 看用户和订单、C 看经营统计。下列组合仅用于快速填写当前个人的勾选项，保存后可以继续自定义。</p>
+      <label>管理员账号<select v-model="adminID" :disabled="busy" @change="loadGrants"><option value="">请选择</option><option v-for="admin in admins" :key="admin.id" :value="String(admin.id)">{{ admin.username }}（{{ admin.id }}）</option></select></label>
+      <template v-if="grantsLoaded">
+        <p>正在配置：<strong>{{ selectedAdmin?.username }}</strong>（ID {{ adminID }}）。仅修改此账号，其他管理员不受影响。</p>
+        <div class="table-wrap"><table><thead><tr><th>站点</th><th>个人菜单组合</th><th>经营统计（含毛利）</th><th>注册用户</th><th>来源订单</th><th>访问记录</th></tr></thead><tbody><tr v-for="site in scope.sites" :key="site.id"><td>{{ site.name }} · {{ site.domain }}</td><td><select :aria-label="`${site.domain} 的个人菜单组合`" :value="matchSiteMenuPreset(grant(site))" @change="setMenuPreset(site, $event)"><option value="custom" disabled>自定义</option><option v-for="preset in siteMenuPresets" :key="preset.id" :value="preset.id">{{ preset.label }}</option></select></td><td><input v-model="grant(site).overview" :aria-label="`${site.domain} 经营统计`" type="checkbox" /></td><td><input v-model="grant(site).users" :aria-label="`${site.domain} 注册用户`" type="checkbox" /></td><td><input v-model="grant(site).orders" :aria-label="`${site.domain} 来源订单`" type="checkbox" /></td><td><input v-model="grant(site).visits" :aria-label="`${site.domain} 访问记录`" type="checkbox" /></td></tr></tbody></table><button :disabled="busy" @click="saveGrants">保存个人授权</button></div>
+        <p class="muted">撤销某站点全部菜单即撤销该站授权。账号仍保持受限身份，不会自动恢复原有全局权限。</p>
+      </template>
+    </template>
+  </section>
+</template>
+
+<style scoped>
+.site-console { display: grid; gap: 20px; max-width: 1500px; margin: 0 auto; min-width: 0; }
+h1 { font-size: 26px; font-weight: 700; } h2 { font-size: 19px; font-weight: 600; }
+header p,.muted { color: hsl(var(--muted-foreground)); line-height: 1.8; font-size: 14px; }
+.filters,nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+label { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 14px; }
+input:not([type=checkbox]),select,button { border: 1px solid hsl(var(--border)); border-radius: 8px; padding: 9px 12px; background: hsl(var(--background)); color: hsl(var(--foreground)); font: inherit; }
+button { cursor: pointer; } button:hover:not(:disabled) { background: hsl(var(--secondary)); } button:disabled { cursor: default; opacity: .45; } nav .active { background: #0f766e; color: white; border-color: #0f766e; }
+.table-wrap { overflow: auto; min-width: 0; } input:focus-visible,select:focus-visible,button:focus-visible { outline: 2px solid #0f766e; outline-offset: 2px; } table { width: 100%; border-collapse: collapse; font-size: 14px; white-space: nowrap; } th,td { text-align: left; padding: 13px 12px; border-bottom: 1px solid hsl(var(--border)); } th { font-weight: 600; }
+.notice { background: #b4530915; border-left: 3px solid #b45309; padding: 12px 16px; line-height: 1.7; }
+.permission-link { text-decoration: underline; text-underline-offset: 3px; }
+.metrics { display: flex; gap: 20px; flex-wrap: wrap; } .metrics article,.detail { padding: 20px; border: 1px solid hsl(var(--border)); border-radius: 12px; } .metrics strong { display: block; font-size: 28px; margin-top: 8px; } .close { float: right; }
+</style>

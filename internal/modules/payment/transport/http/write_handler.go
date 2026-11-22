@@ -110,6 +110,10 @@ func (h *WriteHandler) CreatePayment(c *gin.Context) {
 		ginutil.RespondBindError(c, err)
 		return
 	}
+	if !ginutil.PaymentContextAllowsOrder(c, req.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
+		return
+	}
 
 	order, err := h.userOrders.GetOrderByUserOrderNoForTenant(tenantFromRequest(c), req.OrderNo, uid)
 	if err != nil {
@@ -171,6 +175,10 @@ func (h *WriteHandler) CapturePayment(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
 		return
 	}
+	if order, lookupErr := h.userOrders.GetOrderByUserForTenant(tenantFromRequest(c), payment.OrderID, uid); lookupErr == nil && order != nil && !ginutil.PaymentContextAllowsOrder(c, order.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.order_not_found", nil)
+		return
+	}
 	updated, err := h.payments.CapturePayment(CapturePaymentInput{
 		PaymentID: paymentID,
 		Context:   c.Request.Context(),
@@ -190,6 +198,10 @@ func (h *WriteHandler) CreateGuestPayment(c *gin.Context) {
 	var req CreateGuestPaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ginutil.RespondBindError(c, err)
+		return
+	}
+	if !ginutil.PaymentContextAllowsOrder(c, req.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
 		return
 	}
 	email, password, ok := ginutil.GetGuestCredentials(c)
@@ -263,6 +275,10 @@ func (h *WriteHandler) CaptureGuestPayment(c *gin.Context) {
 			return
 		}
 		ginutil.RespondError(c, response.CodeInternal, "error.order_fetch_failed", err)
+		return
+	}
+	if order, lookupErr := h.guestOrders.GetOrderByGuestForTenant(tenantFromRequest(c), payment.OrderID, email, password); lookupErr == nil && order != nil && !ginutil.PaymentContextAllowsOrder(c, order.OrderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
 		return
 	}
 

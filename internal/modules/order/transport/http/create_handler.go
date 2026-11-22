@@ -11,6 +11,7 @@ import (
 
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 
+	"github.com/dujiao-next/internal/cache"
 	"github.com/dujiao-next/internal/i18n"
 	captcha "github.com/dujiao-next/internal/modules/captcha/contract"
 	captchahttp "github.com/dujiao-next/internal/modules/captcha/transport/http"
@@ -135,6 +136,7 @@ func (h *CreateHandler) CreateOrder(c *gin.Context) {
 
 	orderDetail := orderpresenter.NewOrderDetail(order)
 	enrichOrderWithAllowedChannels(h.payments, order, &orderDetail)
+	orderDetail.PaymentContext = h.paymentContext(c, order, "")
 	response.Success(c, orderDetail)
 }
 
@@ -170,6 +172,7 @@ func (h *CreateHandler) CreateGuestOrder(c *gin.Context) {
 	}
 	orderDetail := orderpresenter.NewOrderDetail(order)
 	enrichOrderWithAllowedChannels(h.payments, order, &orderDetail)
+	orderDetail.PaymentContext = h.paymentContext(c, order, req.OrderPassword)
 	response.Success(c, orderDetail)
 }
 
@@ -204,11 +207,17 @@ func (h *CreateHandler) CreateOrderAndPay(c *gin.Context) {
 
 	orderResp := orderpresenter.NewOrderDetail(order)
 	enrichOrderWithAllowedChannels(h.payments, order, &orderResp)
+	if tenantFromRequest(c).SourceSiteID > 0 {
+		orderResp.PaymentContext = h.paymentContext(c, order, "")
+		response.Success(c, gin.H{"order": orderResp, "order_no": order.OrderNo, "payment_context": orderResp.PaymentContext})
+		return
+	}
 
 	if req.ChannelID == 0 && !req.UseBalance {
 		response.Success(c, gin.H{
-			"order":    orderResp,
-			"order_no": order.OrderNo,
+			"order":           orderResp,
+			"order_no":        order.OrderNo,
+			"payment_context": h.paymentContext(c, order, ""),
 		})
 		return
 	}
@@ -246,16 +255,22 @@ func (h *CreateHandler) CreateGuestOrderAndPay(c *gin.Context) {
 	}
 	orderResp := orderpresenter.NewOrderDetail(order)
 	enrichOrderWithAllowedChannels(h.payments, order, &orderResp)
+	if tenantFromRequest(c).SourceSiteID > 0 {
+		orderResp.PaymentContext = h.paymentContext(c, order, req.OrderPassword)
+		response.Success(c, gin.H{"order": orderResp, "order_no": order.OrderNo, "payment_context": orderResp.PaymentContext})
+		return
+	}
 
 	if req.ChannelID == 0 {
 		response.Success(c, gin.H{
-			"order":    orderResp,
-			"order_no": order.OrderNo,
+			"order":           orderResp,
+			"order_no":        order.OrderNo,
+			"payment_context": h.paymentContext(c, order, req.OrderPassword),
 		})
 		return
 	}
 
-	h.respondCreateAndPay(c, order, orderResp, req.ChannelID, false)
+	h.respondCreateAndPay(c, order, orderResp, req.ChannelID, false, req.OrderPassword)
 }
 
 func (h *CreateHandler) verifyGuestCreateCaptcha(c *gin.Context, payload captchahttp.CaptchaPayloadRequest) bool {
@@ -278,7 +293,7 @@ func (h *CreateHandler) verifyGuestCreateCaptcha(c *gin.Context, payload captcha
 	return true
 }
 
-func (h *CreateHandler) respondCreateAndPay(c *gin.Context, order *orderdomain.Order, orderResp orderpresenter.OrderDetail, channelID uint, useBalance bool) {
+func (h *CreateHandler) respondCreateAndPay(c *gin.Context, order *orderdomain.Order, orderResp orderpresenter.OrderDetail, channelID uint, useBalance bool, guestSecret ...string) {
 	if h.pay == nil {
 		response.Success(c, gin.H{
 			"order":         orderResp,
@@ -304,9 +319,14 @@ func (h *CreateHandler) respondCreateAndPay(c *gin.Context, order *orderdomain.O
 		return
 	}
 
+	secret := ""
+	if len(guestSecret) > 0 {
+		secret = guestSecret[0]
+	}
 	resp := gin.H{
 		"order":              orderResp,
 		"order_no":           order.OrderNo,
+		"payment_context":    h.paymentContext(c, order, secret),
 		"order_paid":         result.OrderPaid,
 		"wallet_paid_amount": result.WalletPaidAmount,
 		"online_pay_amount":  result.OnlinePayAmount,
@@ -335,6 +355,21 @@ func (h *CreateHandler) respondCreateAndPay(c *gin.Context, order *orderdomain.O
 		resp["expires_at"] = result.Payment.ExpiredAt
 	}
 	response.Success(c, resp)
+}
+
+func (h *CreateHandler) paymentContext(c *gin.Context, order *orderdomain.Order, guestSecret string) string {
+	if c == nil || order == nil {
+		return ""
+	}
+	tenant := tenantFromRequest(c)
+	if tenant.SourceSiteID == 0 {
+		return ""
+	}
+	token, err := cache.CreatePaymentContext(c.Request.Context(), cache.PaymentContext{OrderNo: order.OrderNo, UserID: order.UserID, GuestEmail: order.GuestEmail, GuestSecret: guestSecret, SourceSiteID: tenant.SourceSiteID})
+	if err != nil {
+		return ""
+	}
+	return token
 }
 
 // requestSchemeFromContext 返回当前请求的 scheme（优先 X-Forwarded-Proto）。

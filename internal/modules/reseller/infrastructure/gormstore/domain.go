@@ -2,6 +2,7 @@ package gormstore
 
 import (
 	"errors"
+	sitedomain "github.com/dujiao-next/internal/modules/site/domain"
 	"strings"
 	"time"
 
@@ -18,6 +19,9 @@ func (r *Store) UpsertDomain(input resellerdomain.Domain) (*resellerdomain.Domai
 	input.Domain = normalizeDomainForRepository(input.Domain)
 	if input.ResellerID == 0 || input.Domain == "" {
 		return nil, errors.New("invalid reseller domain")
+	}
+	if err := r.checkOperatorDomain(input.Domain); err != nil {
+		return nil, err
 	}
 	now := time.Now()
 	var existing resellerdomain.Domain
@@ -94,6 +98,9 @@ func (r *Store) UpdateDomain(domain *resellerdomain.Domain) error {
 		return errors.New("invalid reseller domain")
 	}
 	domain.Domain = normalizeDomainForRepository(domain.Domain)
+	if err := r.checkOperatorDomain(domain.Domain); err != nil {
+		return err
+	}
 	return r.db.Model(&resellerdomain.Domain{}).
 		Where("id = ? AND deleted_at IS NULL", domain.ID).
 		Select("*").
@@ -204,4 +211,19 @@ func (r *Store) ListDomains(filter resellercontract.DomainListFilter) ([]reselle
 
 func normalizeDomainForRepository(raw string) string {
 	return strings.TrimSuffix(strings.ToLower(strings.TrimSpace(raw)), ".")
+}
+
+// Existing reseller domains cannot claim an operator-owned site.
+func (r *Store) checkOperatorDomain(host string) error {
+	if !r.db.Migrator().HasTable(&sitedomain.Site{}) {
+		return nil
+	}
+	var n int64
+	if err := r.db.Model(&sitedomain.Site{}).Where("domain = ?", host).Count(&n).Error; err != nil {
+		return err
+	}
+	if n > 0 {
+		return resellercontract.ErrDomainConflict
+	}
+	return nil
 }

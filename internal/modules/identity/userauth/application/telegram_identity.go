@@ -1,6 +1,7 @@
 package application
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func (s *Service) getActiveUserByID(userID uint) (*userdomain.User, error) {
 	return user, nil
 }
 
-func (s *Service) findOrCreateTelegramUser(verified *telegramauthapp.IdentityVerified) (*userdomain.User, error) {
+func (s *Service) findOrCreateTelegramUser(verified *telegramauthapp.IdentityVerified, contexts ...context.Context) (*userdomain.User, error) {
 	if verified == nil {
 		return nil, telegramauthapp.ErrTelegramAuthPayloadInvalid
 	}
@@ -74,6 +75,9 @@ func (s *Service) findOrCreateTelegramUser(verified *telegramauthapp.IdentityVer
 		LastLoginAt:           &now,
 		CreatedAt:             now,
 		UpdatedAt:             now,
+	}
+	if len(contexts) > 0 {
+		applyRegistrationSource(contexts[0], user)
 	}
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err

@@ -68,7 +68,12 @@ func (s *Service) LoginWithGoogle(input LoginWithGoogleInput) (*UserLoginResult,
 // LoginVerifiedGoogle completes login after the dedicated Google verifier has
 // authenticated and normalized the credential.
 func (s *Service) LoginVerifiedGoogle(verified *googleauthapp.VerifiedIdentity) (*UserLoginResult, error) {
-	return s.loginVerifiedGoogle(context.Background(), verified)
+	return s.LoginVerifiedGoogleWithContext(context.Background(), verified)
+}
+
+// LoginVerifiedGoogleWithContext preserves server-resolved registration attribution.
+func (s *Service) LoginVerifiedGoogleWithContext(ctx context.Context, verified *googleauthapp.VerifiedIdentity) (*UserLoginResult, error) {
+	return s.loginVerifiedGoogle(ctx, verified)
 }
 
 func (s *Service) loginVerifiedGoogle(ctx context.Context, verified *googleauthapp.VerifiedIdentity) (*UserLoginResult, error) {
@@ -259,6 +264,7 @@ func (s *Service) loginGoogleTransaction(
 			if err != nil {
 				return err
 			}
+			applyRegistrationSource(ctx, user)
 			if err = tx.CreateUser(user); err != nil {
 				return err
 			}

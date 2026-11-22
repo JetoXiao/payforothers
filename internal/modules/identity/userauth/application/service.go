@@ -261,6 +261,10 @@ func (s *Service) checkRegistrationEmailDomain(email string) error {
 
 // Register 用户注册
 func (s *Service) Register(email, password, code string, agreementAccepted bool, emailVerificationEnabled bool) (*userdomain.User, string, time.Time, error) {
+	return s.RegisterWithContext(context.Background(), email, password, code, agreementAccepted, emailVerificationEnabled)
+}
+
+func (s *Service) RegisterWithContext(ctx context.Context, email, password, code string, agreementAccepted bool, emailVerificationEnabled bool) (*userdomain.User, string, time.Time, error) {
 	if !agreementAccepted {
 		return nil, "", time.Time{}, ErrAgreementRequired
 	}
@@ -306,6 +310,7 @@ func (s *Service) Register(email, password, code string, agreementAccepted bool,
 		UpdatedAt:       now,
 	}
 
+	applyRegistrationSource(ctx, user)
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, "", time.Time{}, err
 	}

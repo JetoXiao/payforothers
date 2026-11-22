@@ -61,7 +61,7 @@ func (s *Service) LoginWithTelegramOIDC(input LoginWithTelegramOIDCInput) (*User
 	if intent != telegramauthapp.IntentLogin {
 		return nil, telegramauthapp.ErrTelegramAuthPayloadInvalid
 	}
-	return s.LoginVerifiedTelegram(verified)
+	return s.loginVerifiedTelegram(ctx, verified)
 }
 
 // BindTelegramOIDC 通过 Telegram OIDC 回调绑定当前用户

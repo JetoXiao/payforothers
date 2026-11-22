@@ -2,6 +2,7 @@ package publicconfighttp
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -139,6 +140,9 @@ func (h *Handler) GetConfig(c *gin.Context) {
 
 	tenant, _ := reseller.TenantFromContext(c.Request.Context())
 	cacheKey := h.cache.CacheKey(tenant.ResellerID)
+	if tenant.SourceSiteID > 0 {
+		cacheKey += fmt.Sprintf(":site:%d:%s", tenant.SourceSiteID, tenant.Host)
+	}
 
 	var cached map[string]interface{}
 	if hit, err := h.cache.GetJSON(c.Request.Context(), cacheKey, &cached); err == nil && hit {
@@ -153,6 +157,10 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeInternal, "error.config_fetch_failed", err)
 		return
 	}
+	if brand, ok := data["brand"].(map[string]interface{}); ok {
+		if origin, ok := brand["site_url"].(string); ok { data["payment_origin"] = strings.TrimRight(strings.TrimSpace(origin), "/") }
+	}
+	if tenant.SourceSiteID > 0 { data["payment_origin"] = "https://gptpaynow.com" }
 	if invoiceConfig, invoiceErr := h.settings.GetByKey(constants.SettingKeyInvoiceConfig); invoiceErr == nil && invoiceConfig != nil {
 		data["invoice_config"] = invoiceConfig
 	} else {
@@ -252,6 +260,12 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		data["tenant"] = map[string]interface{}{"mode": "main", "host": tenant.Host}
 	}
 
+	if tenant.SourceSiteID > 0 {
+		data["tenant"] = map[string]interface{}{"mode": "site", "host": tenant.Host, "site_id": tenant.SourceSiteID}
+		if brand, ok := data["brand"].(map[string]interface{}); ok {
+			brand["site_url"] = "https://" + tenant.Host
+		}
+	}
 	_ = h.cache.SetJSON(c.Request.Context(), cacheKey, data, publicConfigCacheTTL)
 	data["server_time"] = time.Now().UnixMilli()
 	data["app_version"] = version.Version

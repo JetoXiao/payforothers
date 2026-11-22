@@ -79,6 +79,10 @@ function createClient(injectAuth: boolean) {
         if (locale) {
             headers['X-Lang'] = locale
         }
+        if (typeof window !== 'undefined') {
+            const paymentContext = new URLSearchParams(window.location.search).get('context')
+            if (paymentContext) headers['X-Payment-Context'] = paymentContext
+        }
 
         if (injectAuth) {
             const token = localStorage.getItem('user_token')

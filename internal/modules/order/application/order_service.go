@@ -574,6 +574,8 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(expireMinutes) * time.Minute)
 	order := &orderdomain.Order{
+		SourceSiteID:            input.Tenant.SourceSiteID,
+		SourceDomain:            resellercontract.NormalizeHost(input.Tenant.Host),
 		OrderNo:                 generateOrderNo(),
 		UserID:                  input.UserID,
 		GuestEmail:              input.GuestEmail,
@@ -642,6 +644,8 @@ func (s *OrderService) createOrder(input orderCreateParams) (*orderdomain.Order,
 				childProfit = pricingCtx.Items[idx].ProfitAmount
 			}
 			childOrder := &orderdomain.Order{
+				SourceSiteID:            order.SourceSiteID,
+				SourceDomain:            order.SourceDomain,
 				OrderNo:                 buildChildOrderNo(order.OrderNo, idx+1),
 				ParentID:                &order.ID,
 				UserID:                  order.UserID,

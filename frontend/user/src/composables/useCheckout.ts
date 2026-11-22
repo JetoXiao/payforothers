@@ -865,10 +865,17 @@ export function useCheckout() {
       clearSourceStore()
 
       // Redirect to the existing Payment page which handles all payment display
+      const context = String(responseData.payment_context || '').trim()
+      const paymentOrigin = String(appStore.config?.payment_origin || '').trim().replace(/\/+$/, '')
       const query = userAuthStore.isAuthenticated
         ? `order_no=${encodeURIComponent(responseData.order_no)}`
         : `guest=1&order_no=${encodeURIComponent(responseData.order_no)}`
-      router.push(`/pay?${query}`)
+      const contextQuery = context ? `&context=${encodeURIComponent(context)}` : ''
+		if (context && paymentOrigin && paymentOrigin !== window.location.origin) {
+        window.location.assign(`${paymentOrigin}/pay?${query}${contextQuery}`)
+      } else {
+        router.push(`/pay?${query}${contextQuery}`)
+      }
     } catch (err: any) {
       error.value = err.message || t('checkout.errors.submitFailed')
       if (guestCaptchaEnabled.value && captchaProvider.value === 'image') {

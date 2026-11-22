@@ -63,6 +63,7 @@ import (
 	paymentprovider "github.com/dujiao-next/internal/modules/payment/infrastructure/gateway/provider"
 	procurementapp "github.com/dujiao-next/internal/modules/procurement/application"
 	procurementgormstore "github.com/dujiao-next/internal/modules/procurement/infrastructure/gormstore"
+	productcatalogcontract "github.com/dujiao-next/internal/modules/productcatalog/contract"
 	promotionapp "github.com/dujiao-next/internal/modules/promotion/application"
 	promotiongormstore "github.com/dujiao-next/internal/modules/promotion/infrastructure/gormstore"
 	reconciliationapp "github.com/dujiao-next/internal/modules/reconciliation/application"
@@ -71,6 +72,7 @@ import (
 	resellergormstore "github.com/dujiao-next/internal/modules/reseller/infrastructure/gormstore"
 	settingsapp "github.com/dujiao-next/internal/modules/settings/application"
 	settingscontract "github.com/dujiao-next/internal/modules/settings/contract"
+	sitecontract "github.com/dujiao-next/internal/modules/site/contract"
 	siteconnectionapp "github.com/dujiao-next/internal/modules/siteconnection/application"
 	siteconnectioncontract "github.com/dujiao-next/internal/modules/siteconnection/contract"
 	sitemapapp "github.com/dujiao-next/internal/modules/sitemap/application"
@@ -89,6 +91,8 @@ type Container struct {
 	QueueClient *queue.Client
 
 	// Repositories
+	SiteStore              sitecontract.Store
+	ProductCatalogStore    productcatalogcontract.Store
 	AdminStore             admincontract.Store
 	UserStore              usercontract.Store
 	ExternalIdentityStore  externalidentitycontract.Store

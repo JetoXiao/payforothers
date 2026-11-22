@@ -126,6 +126,7 @@ watch(() => route.path, () => {
 
 const navGroups = computed<NavGroup[]>(() => {
   const groups: NavGroup[] = [
+    { id: 'site-console', label: '子站管理', icon: Users, items: [{ label: '子站工作台', to: '/site-console', icon: Users, permission: 'GET:/admin/site-console/scope' }] },
     {
       id: 'products',
       label: t('admin.navGroups.productManagement'),
@@ -143,6 +144,7 @@ const navGroups = computed<NavGroup[]>(() => {
           icon: Boxes,
           permission: 'GET:/admin/products',
         },
+        { label: '商品清单', to: '/product-catalog', icon: Boxes, permission: 'GET:/admin/product-catalog' },
         {
           label: t('admin.navItems.cardSecrets'),
           to: '/card-secrets',
@@ -576,6 +578,7 @@ const normalizedSearch = computed(() => navSearch.value.trim().toLowerCase())
 const dashboardNavLabel = computed(() => t('admin.navItems.dashboard'))
 
 const showDashboardNav = computed(() => {
+  if (authStore.siteRestricted) return false
   const keyword = normalizedSearch.value
   if (!keyword) {
     return true
@@ -820,6 +823,7 @@ onBeforeUnmount(() => {
           <!-- Collapsed mode: icon-only -->
           <template v-else>
             <RouterLink
+              v-if="!authStore.siteRestricted"
               to="/"
               class="flex items-center justify-center rounded-lg p-2 transition-colors"
               :class="isItemActive('/') ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/70'"
@@ -958,7 +962,7 @@ onBeforeUnmount(() => {
             <div class="text-sm text-muted-foreground hidden sm:block">{{ t('admin.layout.workspace') }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <OrderVoiceControl />
+            <OrderVoiceControl v-if="!authStore.siteRestricted" />
             <Select
               :model-value="locale"
               @update:modelValue="(value) => { if (value) applyLocale(String(value)) }"
@@ -976,6 +980,7 @@ onBeforeUnmount(() => {
               size="icon-sm"
               variant="outline"
               :title="t('admin.updateCheck.button')"
+              v-if="!authStore.siteRestricted"
               @click="updateCheckOpen = true"
             >
               <RefreshCw class="h-4 w-4" />
@@ -1003,6 +1008,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <SystemUpdateDialog v-model:open="updateCheckOpen" />
+    <SystemUpdateDialog v-if="!authStore.siteRestricted" v-model:open="updateCheckOpen" />
   </div>
 </template>

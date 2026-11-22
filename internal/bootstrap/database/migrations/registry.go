@@ -28,10 +28,12 @@ import (
 	orderriskdomain "github.com/dujiao-next/internal/modules/orderrisk/domain"
 	paymentdomain "github.com/dujiao-next/internal/modules/payment/domain"
 	procurementdomain "github.com/dujiao-next/internal/modules/procurement/domain"
+	productcatalogdomain "github.com/dujiao-next/internal/modules/productcatalog/domain"
 	promotiondomain "github.com/dujiao-next/internal/modules/promotion/domain"
 	reconciliationdomain "github.com/dujiao-next/internal/modules/reconciliation/domain"
 	resellerstore "github.com/dujiao-next/internal/modules/reseller/infrastructure/gormstore"
 	settingsstore "github.com/dujiao-next/internal/modules/settings/infrastructure/gormstore"
+	sitedomain "github.com/dujiao-next/internal/modules/site/domain"
 	siteconnectiondomain "github.com/dujiao-next/internal/modules/siteconnection/domain"
 	broadcastdomain "github.com/dujiao-next/internal/modules/telegram/broadcast/domain"
 	walletdomain "github.com/dujiao-next/internal/modules/wallet/domain"
@@ -44,6 +46,8 @@ import (
 func AutoMigrate() error {
 	db := gormdb.DB
 	if err := db.AutoMigrate(
+		&sitedomain.Site{}, &sitedomain.AdminScope{}, &sitedomain.Grant{}, &sitedomain.Visit{},
+		&productcatalogdomain.Item{},
 		&admindomain.Admin{},
 		&userdomain.User{},
 		&externalidentitydomain.Identity{},

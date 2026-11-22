@@ -22,6 +22,7 @@ import (
 	paymentcallbacktransport "github.com/dujiao-next/internal/modules/payment/transport/http/callback"
 	resellertransport "github.com/dujiao-next/internal/modules/reseller/transport/http/user"
 	publicconfigtransport "github.com/dujiao-next/internal/modules/settings/transport/http/public"
+	siteapp "github.com/dujiao-next/internal/modules/site/application"
 	wallettransport "github.com/dujiao-next/internal/modules/wallet/transport/http"
 
 	"github.com/gin-gonic/gin"
@@ -69,7 +70,12 @@ func registerStorefrontRoutes(
 	giftCardRedeemRule middleware.RateLimitRule,
 ) {
 	storefront := apiV1.Group("")
-	storefront.Use(middleware.ResellerTenantMiddleware(c.ResellerDomainResolver))
+	if c.SiteStore != nil {
+		sites := siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)
+		storefront.Use(middleware.ResellerTenantMiddleware(sites), middleware.SiteVisitMiddleware(sites), middleware.PaymentContextMiddleware())
+	} else {
+		storefront.Use(middleware.ResellerTenantMiddleware(c.ResellerDomainResolver), middleware.PaymentContextMiddleware())
+	}
 	affiliateHandler := affiliatebootstrap.NewStorefrontHandler(c)
 
 	// 公开接口
@@ -88,6 +94,7 @@ func registerStorefrontRoutes(
 	guest := storefront.Group("/guest")
 	guestRead := guest.Group("")
 	guestRead.Use(middleware.RateLimitMiddleware(redisClient, guestReadRule, middleware.KeyByIP))
+	guestRead.Use(middleware.PaymentContextGuestGuard())
 	{
 		ordertransport.RegisterGuestPreviewRoute(guestRead, orderPreviewHandler)
 		ordertransport.RegisterGuestReadRoutes(guestRead, guestOrderHandler)

@@ -111,7 +111,7 @@ func (s *RequestStore) Apply(user, profileID uint, kind string, nos []string, pr
 		currency := orders[0].Currency
 		ids := []uint{}
 		for _, o := range orders {
-			if !paidEligible(&o) || o.InvoiceRequested || o.InvoiceRequestID != nil || o.InvoiceStatus != "none" && o.InvoiceStatus != "" || o.Currency != currency {
+			if !paidEligible(&o) || o.InvoiceRequested || o.InvoiceRequestID != nil || o.InvoiceStatus != "none" && o.InvoiceStatus != "" || o.Currency != currency || o.SourceSiteID != orders[0].SourceSiteID {
 				return d.ErrConflict
 			}
 			base = base.Add(o.TotalAmount.Decimal)
@@ -131,7 +131,7 @@ func (s *RequestStore) Apply(user, profileID uint, kind string, nos []string, pr
 		}
 		if tax.IsPositive() {
 			expires := time.Now().Add(30 * time.Minute)
-			order := &od.Order{OrderNo: serial.Generate("INV"), UserID: user, Status: constants.OrderStatusPendingPayment, Purpose: "invoice_tax", Currency: currency, OriginalAmount: money.FromDecimal(tax), TotalAmount: money.FromDecimal(tax), OnlinePaidAmount: money.FromDecimal(tax), InvoiceRequestID: &request.ID, InvoiceStatus: "none", ExpiresAt: &expires}
+			order := &od.Order{SourceSiteID: orders[0].SourceSiteID, SourceDomain: orders[0].SourceDomain, OrderNo: serial.Generate("INV"), UserID: user, Status: constants.OrderStatusPendingPayment, Purpose: "invoice_tax", Currency: currency, OriginalAmount: money.FromDecimal(tax), TotalAmount: money.FromDecimal(tax), OnlinePaidAmount: money.FromDecimal(tax), InvoiceRequestID: &request.ID, InvoiceStatus: "none", ExpiresAt: &expires}
 			if err := tx.Create(order).Error; err != nil {
 				return err
 			}

@@ -87,6 +87,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
     roles: readArrayStorage(ROLES_KEY),
     permissions: readArrayStorage(PERMISSIONS_KEY),
     permissionsLoaded: false,
+    siteRestricted: false,
     challengeToken: '' as string,
     challengeExpiresAt: '' as string,
     requiresTotp: false as boolean,
@@ -153,6 +154,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       const response = await adminAPI.getAuthzMe()
       const payload = response.data.data
       this.isSuper = Boolean(payload?.is_super)
+      this.siteRestricted = !this.isSuper && Boolean(payload?.site_scope?.restricted)
       this.roles = Array.isArray(payload?.roles) ? payload.roles : []
       this.permissions = Array.isArray(payload?.policies) ? buildPermissionKeys(payload.policies) : []
       this.permissionsLoaded = true
@@ -169,6 +171,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       if (this.isSuper) {
         return true
       }
+      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || permission === 'GET:/admin/2fa/status'
       const required = parsePermissionKey(permission)
       return this.permissions.some((item) => {
         const granted = parsePermissionKey(item)
@@ -182,6 +185,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
 
     clearAuthzCache() {
       this.isSuper = false
+      this.siteRestricted = false
       this.roles = []
       this.permissions = []
       this.permissionsLoaded = false

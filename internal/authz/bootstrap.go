@@ -33,6 +33,7 @@ func BuiltinRoleSeeds() []RoleSeed {
 				{Object: "/admin/2fa/enable", Action: "POST"},                    // 自助启用 2FA
 				{Object: "/admin/2fa/disable", Action: "POST"},                   // 自助关闭 2FA
 				{Object: "/admin/2fa/recovery-codes/regenerate", Action: "POST"}, // 重新生成恢复码
+				{Object: "/admin/product-catalog", Action: "GET"},
 			},
 			Immutable: true,
 		},
@@ -41,6 +42,9 @@ func BuiltinRoleSeeds() []RoleSeed {
 			Inherits: []string{"readonly_auditor"},
 			Policies: []Policy{
 				{Object: "/admin/products", Action: "*"},
+				{Object: "/admin/product-catalog", Action: "GET"},
+				{Object: "/admin/product-catalog", Action: "POST"},
+				{Object: "/admin/product-catalog/:id", Action: "PUT"},
 				{Object: "/admin/products/:id", Action: "*"},
 				{Object: "/admin/products/:id/wholesale-prices", Action: "PATCH"},
 				{Object: "/admin/categories", Action: "*"},

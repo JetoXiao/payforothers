@@ -70,7 +70,9 @@ func (h *GuestHandler) ListGuestOrders(c *gin.Context) {
 			Total:     1,
 			TotalPage: 1,
 		}
-		response.SuccessWithPage(c, orderpresenter.NewOrderSummaryList([]orderdomain.Order{*order}), pagination)
+		summaries := orderpresenter.NewOrderSummaryList([]orderdomain.Order{*order})
+		attachSummaryContexts(c, []orderdomain.Order{*order}, summaries, password)
+		response.SuccessWithPage(c, summaries, pagination)
 		return
 	}
 
@@ -82,7 +84,9 @@ func (h *GuestHandler) ListGuestOrders(c *gin.Context) {
 		return
 	}
 	pagination := response.BuildPagination(page, pageSize, total)
-	response.SuccessWithPage(c, orderpresenter.NewOrderSummaryList(orders), pagination)
+	summaries := orderpresenter.NewOrderSummaryList(orders)
+	attachSummaryContexts(c, orders, summaries, password)
+	response.SuccessWithPage(c, summaries, pagination)
 }
 
 // GetGuestOrderByOrderNo 按订单号获取游客订单详情
@@ -101,6 +105,10 @@ func (h *GuestHandler) GetGuestOrderByOrderNo(c *gin.Context) {
 		ginutil.RespondError(c, response.CodeBadRequest, "error.order_item_invalid", nil)
 		return
 	}
+	if !ginutil.PaymentContextAllowsOrder(c, orderNo) {
+		ginutil.RespondError(c, response.CodeNotFound, "error.guest_order_not_found", nil)
+		return
+	}
 	order, err := h.orders.GetOrderByGuestOrderNoForTenant(tenantFromRequest(c), orderNo, email, password)
 	if err != nil {
 		if errors.Is(err, ErrGuestOrderNotFound) {
@@ -111,6 +119,7 @@ func (h *GuestHandler) GetGuestOrderByOrderNo(c *gin.Context) {
 		return
 	}
 	orderDetail := orderpresenter.NewOrderDetailTruncated(order)
+	orderDetail.PaymentContext = attachPaymentContext(c, order, password)
 	enrichOrderWithAllowedChannels(h.payments, order, &orderDetail)
 	enrichOrderWithRefundRecords(h.refunds, order, &orderDetail)
 	response.Success(c, orderDetail)

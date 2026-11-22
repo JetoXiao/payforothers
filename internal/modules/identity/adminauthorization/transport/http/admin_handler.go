@@ -193,10 +193,11 @@ func (h *AdminHandler) GetAuthzMe(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"admin_id": adminID,
-		"is_super": isSuper,
-		"roles":    roles,
-		"policies": policies,
+		"admin_id":   adminID,
+		"is_super":   isSuper,
+		"roles":      roles,
+		"policies":   policies,
+		"site_scope": func() interface{} { value, _ := c.Get("site_scope"); return value }(),
 	})
 }
 

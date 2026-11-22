@@ -19,6 +19,17 @@ func GetGuestCredentials(c *gin.Context) (string, string, bool) {
 		return "", "", false
 	}
 	value := strings.TrimSpace(c.GetHeader("Authorization"))
+	if value == "" {
+		email, emailOK := c.Get("payment_context_guest_email")
+		secret, secretOK := c.Get("payment_context_guest_secret")
+		if emailOK && secretOK {
+			mail, mailOK := email.(string)
+			pass, passOK := secret.(string)
+			if mailOK && passOK && mail != "" && pass != "" {
+				return mail, pass, true
+			}
+		}
+	}
 	if len(value) <= len(guestAuthorizationScheme) || len(value) > maxGuestAuthorizationSize ||
 		!strings.EqualFold(value[:len(guestAuthorizationScheme)], guestAuthorizationScheme) {
 		return "", "", false

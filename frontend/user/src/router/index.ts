@@ -5,6 +5,8 @@ import { useTelegramMiniAppStore } from '../stores/telegramMiniApp'
 import { captureAffiliateFromRoute } from '../utils/affiliate'
 import { templateView } from '../templates/registry'
 import { GOOGLE_REDIRECT_FRONTEND_CALLBACK_PATH } from '../utils/googleRedirect'
+import { guestOrderAPI, userOrderAPI } from '../api'
+import { loadGuestOrderAuth } from '../utils/guestOrderAuth'
 
 type RouteComponentLoader = () => Promise<unknown>
 
@@ -324,6 +326,27 @@ router.beforeEach(async (to, _from, next) => {
     // Ensure config is loaded before checking template mode
     if (!appStore.config) {
         await appStore.loadConfig()
+    }
+
+    if (to.name === 'payment' && appStore.config?.tenant?.mode === 'site' && !to.query.context && to.query.order_no) {
+        try {
+            const orderNo = String(to.query.order_no)
+            let context = ''
+            if (to.query.guest) {
+                const auth = loadGuestOrderAuth()
+                if (auth.email && auth.order_password) context = String((await guestOrderAPI.detail(orderNo, auth, { silentBusinessError: true })).data.data?.payment_context || '')
+            } else if (userAuthStore.isAuthenticated) {
+                context = String((await userOrderAPI.detail(orderNo, { silentBusinessError: true })).data.data?.payment_context || '')
+            }
+            const origin = String(appStore.config?.payment_origin || '').trim().replace(/\/+$/, '')
+            if (context && origin && origin !== window.location.origin) {
+                const query = new URLSearchParams()
+                Object.entries(to.query).forEach(([key, value]) => { if (value != null) query.set(key, Array.isArray(value) ? String(value[0]) : String(value)) })
+                query.set('context', context)
+                window.location.assign(`${origin}/pay?${query.toString()}`)
+                return
+            }
+        } catch { /* Payment.vue renders its normal error/authentication UI. */ }
     }
 
     if (to.meta.requiresUserAuth) {

@@ -24,9 +24,7 @@ function splitGuestAuth(input: GuestAuthInput = {}) {
     const { email = '', order_password = '', ...payload } = input
     return {
         payload,
-        headers: {
-            Authorization: encodeGuestAuthorization(String(email), String(order_password)),
-        },
+        headers: email && order_password ? { Authorization: encodeGuestAuthorization(String(email), String(order_password)) } : {},
     }
 }
 

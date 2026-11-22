@@ -120,11 +120,19 @@ export function usePayment() {
     if (orderNo !== '') return orderNo
     return readRouteQueryValue('out_trade_no')
   })
+	const paymentContext = computed(() => readRouteQueryValue('context'))
+	const mainPaymentOrigin = computed(() => String(appStore.config?.payment_origin || '').trim().replace(/\/+$/, ''))
+	const redirectPaymentToMain = (context: string) => {
+		if (appStore.config?.tenant?.mode !== 'site' || !mainPaymentOrigin.value || mainPaymentOrigin.value === window.location.origin || !context || typeof window === 'undefined') return false
+		const query = new URLSearchParams(); if (isGuest.value) query.set('guest','1'); if (orderNoQuery.value) query.set('order_no',orderNoQuery.value); query.set('context',context)
+		window.location.assign(`${mainPaymentOrigin.value}/pay?${query.toString()}`); return true
+	}
+	const sitePaymentContextMissing = computed(() => appStore.config?.tenant?.mode === 'site' && order.value?.status === 'pending_payment' && !paymentContext.value)
   const orderNoResolved = computed(() => {
     return order.value?.order_no || orderNoQuery.value || ''
   })
   const backLink = computed(() => (isGuest.value ? '/guest/orders' : '/me/orders'))
-  const hasGuestAuth = computed(() => Boolean(guestAuth.value.email && guestAuth.value.order_password))
+  const hasGuestAuth = computed(() => Boolean(paymentContext.value || (guestAuth.value.email && guestAuth.value.order_password)))
   const showGuestAuthForm = computed(() => isGuest.value && (!hasGuestAuth.value || guestAuthError.value))
   const walletOnlyPayment = computed(() => !!appStore.config?.wallet_only_payment)
   const showBalanceOption = computed(() => !isGuest.value)
@@ -603,6 +611,8 @@ export function usePayment() {
         const response = await userOrderAPI.detail(orderNoQuery.value, { silentBusinessError: true })
         order.value = response.data.data
       }
+	if (redirectPaymentToMain(String(order.value?.payment_context || ''))) return
+	if (sitePaymentContextMissing.value) { error.value = t('payment.paymentSessionUnavailable'); orderPaymentChannels.value = []; orderPaymentChannelsLoaded.value = false; return }
     } catch (err) {
       if (!silent) {
         order.value = null

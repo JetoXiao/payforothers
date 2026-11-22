@@ -8,6 +8,8 @@ import (
 
 // User 用户表
 type User struct {
+	RegistrationSiteID    uint         `gorm:"not null;default:0;index" json:"registration_site_id"`
+	RegistrationDomain    string       `gorm:"size:253;not null;default:'';index" json:"registration_domain"`
 	ID                    uint         `gorm:"primarykey" json:"id"`                                         // 主键
 	Email                 string       `gorm:"uniqueIndex;not null" json:"email"`                            // 邮箱
 	PasswordHash          string       `gorm:"not null" json:"-"`                                            // 密码哈希（不返回给前端）

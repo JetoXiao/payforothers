@@ -6,12 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dujiao-next/internal/modules/identity/jwttoken"
-	usercontract "github.com/dujiao-next/internal/modules/identity/user/contract"
-	userauthapp "github.com/dujiao-next/internal/modules/identity/userauth/application"
-
-	"go.uber.org/zap"
-
 	"github.com/dujiao-next/internal/authz"
 	"github.com/dujiao-next/internal/cache"
 	"github.com/dujiao-next/internal/config"
@@ -20,11 +14,15 @@ import (
 	"github.com/dujiao-next/internal/logger"
 	admincontract "github.com/dujiao-next/internal/modules/identity/admin/contract"
 	adminauthapp "github.com/dujiao-next/internal/modules/identity/adminauth/application"
+	"github.com/dujiao-next/internal/modules/identity/jwttoken"
+	usercontract "github.com/dujiao-next/internal/modules/identity/user/contract"
+	userauthapp "github.com/dujiao-next/internal/modules/identity/userauth/application"
+	sitedomain "github.com/dujiao-next/internal/modules/site/domain"
 	"github.com/dujiao-next/internal/platform/http/response"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const requestIDKey = "request_id"
@@ -282,6 +280,12 @@ func AdminRBACMiddleware(authzService *authz.Service) gin.HandlerFunc {
 			return
 		}
 
+		if scopeValue, ok := c.Get("site_scope"); ok {
+			if scope, ok := scopeValue.(sitedomain.Scope); ok && scope.Restricted && (strings.HasPrefix(c.FullPath(), "/api/v1/admin/site-console/") || c.FullPath() == "/api/v1/admin/authz/me" || c.FullPath() == "/api/v1/admin/password" || strings.HasPrefix(c.FullPath(), "/api/v1/admin/2fa/")) {
+				c.Next()
+				return
+			}
+		}
 		resource := c.FullPath()
 		if strings.TrimSpace(resource) == "" {
 			resource = c.Request.URL.Path
@@ -332,6 +336,18 @@ func UserJWTAuthMiddleware(secretKey string, userRepo usercontract.Store) gin.Ha
 			c.Abort()
 			return
 		}
+		if paymentUser, ok := c.Get("payment_context_user_id"); ok {
+			uid, uidOK := paymentUser.(uint)
+			if uidOK && uid > 0 && paymentContextPathAllowed(c.FullPath()) {
+				user, fetchErr := userRepo.GetByID(uid)
+				if fetchErr == nil && user != nil && isActiveUserStatus(user.Status) {
+					c.Set("user_id", uid)
+					c.Set("user_email", user.Email)
+					c.Next()
+					return
+				}
+			}
+		}
 		authHeader := c.GetHeader(authHeaderKey)
 		if authHeader == "" {
 			msg := i18n.T(i18n.ResolveLocale(c), "error.auth_header_missing")
@@ -359,6 +375,13 @@ func UserJWTAuthMiddleware(secretKey string, userRepo usercontract.Store) gin.Ha
 			response.Unauthorized(c, msg)
 			c.Abort()
 			return
+		}
+		if paymentUser, ok := c.Get("payment_context_user_id"); ok && paymentUser.(uint) > 0 && paymentUser.(uint) == claims.UserID {
+			if !paymentContextPathAllowed(c.FullPath()) {
+				response.Forbidden(c, i18n.T(i18n.ResolveLocale(c), "error.forbidden"))
+				c.Abort()
+				return
+			}
 		}
 		if !jwttoken.IsAccessType(claims.Typ) {
 			msg := i18n.T(i18n.ResolveLocale(c), "error.token_invalid")
@@ -411,6 +434,10 @@ func UserJWTAuthMiddleware(secretKey string, userRepo usercontract.Store) gin.Ha
 		c.Set("user_email", claims.Email)
 		c.Next()
 	}
+}
+
+func paymentContextPathAllowed(path string) bool {
+	return strings.Contains(path, "/orders/") || strings.HasSuffix(path, "/order/payment-channels") || strings.HasSuffix(path, "/payments/latest") || strings.HasSuffix(path, "/payments") || strings.Contains(path, "/payments/")
 }
 
 func isIssuedAfterInvalidBefore(issuedAt *jwt.NumericDate, invalidBefore *time.Time) bool {

@@ -2,6 +2,8 @@ package container
 
 import (
 	"fmt"
+	productcatalogstore "github.com/dujiao-next/internal/modules/productcatalog/infrastructure/gormstore"
+	sitegormstore "github.com/dujiao-next/internal/modules/site/infrastructure/gormstore"
 
 	affiliategormstore "github.com/dujiao-next/internal/modules/affiliate/infrastructure/gormstore"
 	apicredentialgormstore "github.com/dujiao-next/internal/modules/apicredential/infrastructure/gormstore"
@@ -39,6 +41,8 @@ import (
 
 func (c *Container) initRepositories() error {
 	db := gormdb.DB
+	c.SiteStore = sitegormstore.New(db)
+	c.ProductCatalogStore = productcatalogstore.New(db)
 	c.AdminStore = adminstore.New(db)
 	c.UserStore = userstore.New(db)
 	c.ExternalIdentityStore = externalidentitystore.New(db)

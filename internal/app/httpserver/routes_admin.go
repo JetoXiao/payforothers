@@ -30,10 +30,13 @@ import (
 	ordertransport "github.com/dujiao-next/internal/modules/order/transport/http"
 	paymenttransport "github.com/dujiao-next/internal/modules/payment/transport/http"
 	procurementtransport "github.com/dujiao-next/internal/modules/procurement/transport/http"
+	productcataloghttp "github.com/dujiao-next/internal/modules/productcatalog/transport/http"
 	promotiontransport "github.com/dujiao-next/internal/modules/promotion/transport/http"
 	reconciliationtransport "github.com/dujiao-next/internal/modules/reconciliation/transport/http"
 	resellertransport "github.com/dujiao-next/internal/modules/reseller/transport/http/admin"
 	settingstransport "github.com/dujiao-next/internal/modules/settings/transport/http"
+	siteapp "github.com/dujiao-next/internal/modules/site/application"
+	sitehttp "github.com/dujiao-next/internal/modules/site/transport/http"
 	siteconnectiontransport "github.com/dujiao-next/internal/modules/siteconnection/transport/http"
 	broadcasthttp "github.com/dujiao-next/internal/modules/telegram/broadcast/transport/http"
 	uploadtransport "github.com/dujiao-next/internal/modules/upload/transport/http"
@@ -92,7 +95,17 @@ func registerAdminRoutes(
 	adminauthtransport.RegisterAdmin2FAAuthRoutes(admin, admin2FAHandler, middleware.RateLimitMiddleware(redisClient, adminLoginRule, middleware.KeyByIP))
 
 	// 需要鉴权的接口
-	authorized := admin.Use(middleware.JWTAuthMiddleware(cfg.JWT.SecretKey, c.AdminStore), middleware.AdminRBACMiddleware(c.AuthzService))
+	admin.Use(middleware.JWTAuthMiddleware(cfg.JWT.SecretKey, c.AdminStore))
+	if c.SiteStore != nil {
+		admin.Use(middleware.SiteAdminMiddleware(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)))
+	}
+	authorized := admin.Use(middleware.AdminRBACMiddleware(c.AuthzService))
+	if c.SiteStore != nil {
+		sitehttp.RegisterRoutes(authorized, sitehttp.New(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)).WithAudit(c.AuthzAuditService))
+	}
+	if c.ProductCatalogStore != nil {
+		productcataloghttp.RegisterRoutes(authorized, productcataloghttp.New(c.ProductCatalogStore))
+	}
 	// 支付/财务相关受保护子组：未确认合规声明时拦截
 	// 注：admin.Use(...) 已 mutate admin 自身，新 Group 继承 JWT + RBAC 中间件
 	paymentProtected := admin.Group("", middleware.PaymentComplianceRequired(c.ComplianceService))

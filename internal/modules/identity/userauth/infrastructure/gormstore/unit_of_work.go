@@ -124,7 +124,7 @@ func (t *transaction) UpdateUser(user *userdomain.User) error {
 	return t.db.Model(&userdomain.User{}).
 		Where("id = ? AND deleted_at IS NULL", user.ID).
 		Select("*").
-		Omit("id", "deleted_at").
+		Omit("id", "deleted_at", "registration_site_id", "registration_domain").
 		Updates(user).Error
 }
 

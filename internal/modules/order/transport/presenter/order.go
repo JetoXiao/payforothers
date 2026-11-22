@@ -29,6 +29,7 @@ type OrderSummary struct {
 	Children                []OrderSummary  `json:"children,omitempty"`
 	InvoiceRequested        bool            `json:"invoice_requested"`
 	InvoiceStatus           string          `json:"invoice_status"`
+	PaymentContext          string          `json:"payment_context,omitempty"`
 }
 
 // NewOrderSummary 从 orderdomain.Order 构造 OrderSummary
@@ -101,6 +102,7 @@ type OrderDetail struct {
 	InvoiceStatus            string            `json:"invoice_status"`
 	InvoiceTaxRate           money.Amount      `json:"invoice_tax_rate"`
 	InvoiceTaxAmount         money.Amount      `json:"invoice_tax_amount"`
+	PaymentContext           string            `json:"payment_context,omitempty"`
 }
 
 // OrderRefundResp 用户侧订单退款记录响应

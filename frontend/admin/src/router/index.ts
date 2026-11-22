@@ -25,6 +25,18 @@ const routes = [
         component: () => import('@/views/Forbidden.vue'),
       },
       {
+        path: 'site-console',
+        name: 'site-console',
+        component: () => import('@/views/admin/SiteConsole.vue'),
+        meta: { permission: 'GET:/admin/site-console/scope' },
+      },
+      {
+        path: 'product-catalog',
+        name: 'product-catalog',
+        component: () => import('@/views/admin/ProductCatalog.vue'),
+        meta: { permission: 'GET:/admin/product-catalog' },
+      },
+      {
         path: 'products',
         name: 'products',
         component: () => import('@/views/admin/Products.vue'),
@@ -423,6 +435,10 @@ router.beforeEach(async (to) => {
       authStore.logout()
       return { path: '/login' }
     }
+  }
+
+  if (to.meta.requiresAuth && authStore.siteRestricted && !['/site-console', '/security', '/forbidden'].includes(to.path)) {
+    return { path: '/site-console' }
   }
 
   const requiredPermission = typeof to.meta.permission === 'string' ? to.meta.permission : ''

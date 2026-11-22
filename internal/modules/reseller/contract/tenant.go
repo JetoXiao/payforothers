@@ -13,6 +13,7 @@ type tenantContextKey struct{}
 
 // TenantContext 表示主站或分销站请求上下文。
 type TenantContext struct {
+	SourceSiteID      uint // operator-owned site; independent from reseller pricing
 	Host              string
 	IsMain            bool
 	ResellerID        *uint
