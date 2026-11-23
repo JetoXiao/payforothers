@@ -33,6 +33,7 @@ type Grant struct {
 	Users    bool `json:"users"`
 	Orders   bool `json:"orders"`
 	Visits   bool `json:"visits"`
+	ProductCatalog bool `json:"product_catalog"`
 }
 
 func (Grant) TableName() string { return "storefront_admin_grants" }
@@ -73,6 +74,20 @@ func (s Scope) Allows(siteID uint, menu string) bool {
 			return g.Orders
 		case "visits":
 			return g.Visits
+		case "product_catalog":
+			return g.ProductCatalog
+		}
+	}
+	return false
+}
+
+func (s Scope) AllowsAny(menu string) bool {
+	if !s.Restricted {
+		return true
+	}
+	for _, g := range s.Grants {
+		if menu == "product_catalog" && g.ProductCatalog {
+			return true
 		}
 	}
 	return false

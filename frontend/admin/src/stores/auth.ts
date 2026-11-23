@@ -171,7 +171,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       if (this.isSuper) {
         return true
       }
-      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || permission === 'GET:/admin/2fa/status'
+      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || permission === 'GET:/admin/product-catalog' || permission === 'GET:/admin/2fa/status'
       const required = parsePermissionKey(permission)
       return this.permissions.some((item) => {
         const granted = parsePermissionKey(item)

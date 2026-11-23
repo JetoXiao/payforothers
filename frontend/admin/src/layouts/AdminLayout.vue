@@ -48,7 +48,6 @@ import {
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { RefreshCw } from 'lucide-vue-next'
@@ -113,7 +112,6 @@ const siteUrl = ref('')
 // 版本检测与一键升级的完整交互都在 SystemUpdateDialog 内，这里只负责开关
 const updateCheckOpen = ref(false)
 
-const navSearch = ref('')
 const expandedGroups = ref<Record<string, boolean>>(readExpandedGroups())
 const mobileNavOpen = ref(false)
 const sidebarCollapsed = ref(false)
@@ -126,7 +124,14 @@ watch(() => route.path, () => {
 
 const navGroups = computed<NavGroup[]>(() => {
   const groups: NavGroup[] = [
-    { id: 'site-console', label: '子站管理', icon: Users, items: [{ label: '子站工作台', to: '/site-console/overview', icon: Users, permission: 'GET:/admin/site-console/scope' }] },
+    { id: 'site-console', label: '子站管理', icon: Users, items: [
+      { label: '经营统计', to: '/site-console/overview', icon: LayoutDashboard, permission: 'GET:/admin/site-console/scope' },
+      { label: '注册用户', to: '/site-console/users', icon: UserRound, permission: 'GET:/admin/site-console/scope' },
+      { label: '来源订单', to: '/site-console/orders', icon: ListOrdered, permission: 'GET:/admin/site-console/scope' },
+      { label: '访问记录', to: '/site-console/visits', icon: History, permission: 'GET:/admin/site-console/scope' },
+      { label: '站点与管理员', to: '/site-console/settings', icon: Settings, permission: 'GET:/admin/site-console/scope' },
+      { label: '商品清单', to: '/product-catalog', icon: Boxes, permission: 'GET:/admin/product-catalog' },
+    ] },
     {
       id: 'products',
       label: t('admin.navGroups.productManagement'),
@@ -574,7 +579,7 @@ watch(
   { deep: true }
 )
 
-const normalizedSearch = computed(() => navSearch.value.trim().toLowerCase())
+const normalizedSearch = computed(() => '')
 const dashboardNavLabel = computed(() => t('admin.navItems.dashboard'))
 
 const showDashboardNav = computed(() => {
@@ -589,24 +594,7 @@ const showDashboardNav = computed(() => {
 })
 
 const filteredNavGroups = computed<NavGroup[]>(() => {
-  const keyword = normalizedSearch.value
-  if (!keyword) {
-    return navGroups.value
-  }
-  const result: NavGroup[] = []
-  navGroups.value.forEach((group) => {
-    const groupMatched = group.label.toLowerCase().includes(keyword)
-    const matchedItems = groupMatched
-      ? group.items
-      : group.items.filter((item) => item.label.toLowerCase().includes(keyword))
-    if (matchedItems.length > 0) {
-      result.push({
-        ...group,
-        items: matchedItems,
-      })
-    }
-  })
-  return result
+  return navGroups.value
 })
 
 const isGroupExpanded = (groupID: string) => {
@@ -765,13 +753,6 @@ onBeforeUnmount(() => {
           <div v-if="!sidebarCollapsed" class="text-xs text-muted-foreground mt-1">{{ t('admin.layout.controlRoom') }}</div>
           <div v-if="sidebarCollapsed" class="text-lg font-semibold tracking-tight text-center">D&J</div>
         </div>
-        <div v-if="!sidebarCollapsed" class="px-3 pb-2">
-          <Input
-            v-model="navSearch"
-            class="h-8 text-xs"
-            :placeholder="t('admin.navSearch.placeholder')"
-          />
-        </div>
         <nav class="pb-3 space-y-2 flex-1 overflow-y-auto" :class="sidebarCollapsed ? 'px-1.5' : 'px-3'">
           <!-- Expanded mode -->
           <template v-if="!sidebarCollapsed">
@@ -784,12 +765,6 @@ onBeforeUnmount(() => {
               <LayoutDashboard class="h-4 w-4 shrink-0" />
               <span>{{ dashboardNavLabel }}</span>
             </RouterLink>
-            <div
-              v-if="!showDashboardNav && filteredNavGroups.length === 0"
-              class="rounded-lg border border-dashed border-border px-3 py-4 text-xs text-muted-foreground"
-            >
-              {{ t('admin.navSearch.empty') }}
-            </div>
             <div v-for="group in filteredNavGroups" :key="group.id" class="space-y-1">
               <button
                 type="button"
@@ -875,11 +850,6 @@ onBeforeUnmount(() => {
             <div class="text-xs text-muted-foreground mt-1">{{ t('admin.layout.controlRoom') }}</div>
           </div>
           <div class="px-3 pb-2">
-            <Input
-              v-model="navSearch"
-              class="h-8 text-xs"
-              :placeholder="t('admin.navSearch.placeholder')"
-            />
           </div>
           <nav class="px-3 pb-3 space-y-2 flex-1 overflow-y-auto">
             <RouterLink
@@ -891,12 +861,6 @@ onBeforeUnmount(() => {
               <LayoutDashboard class="h-4 w-4 shrink-0" />
               <span>{{ dashboardNavLabel }}</span>
             </RouterLink>
-            <div
-              v-if="!showDashboardNav && filteredNavGroups.length === 0"
-              class="rounded-lg border border-dashed border-border px-3 py-4 text-xs text-muted-foreground"
-            >
-              {{ t('admin.navSearch.empty') }}
-            </div>
             <div v-for="group in filteredNavGroups" :key="`mobile-${group.id}`" class="space-y-1">
               <button
                 type="button"

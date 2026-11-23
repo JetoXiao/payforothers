@@ -1,7 +1,7 @@
 import { api } from './client'
 
 export interface Site { id: number; name: string; domain: string; enabled: boolean; certificate_status?: string; certificate_expires_at?: string; certificate_error?: string; certificate_requested_at?: string }
-export interface SiteGrant { site_id: number; overview: boolean; users: boolean; orders: boolean; visits: boolean }
+export interface SiteGrant { site_id: number; overview: boolean; users: boolean; orders: boolean; visits: boolean; product_catalog?: boolean }
 export interface SiteScope { restricted: boolean; is_super: boolean; grants: SiteGrant[]; sites: Site[]; base_domain: string }
 export interface SiteUser { id: number; email: string; display_name: string; registration_domain: string; created_at: string }
 export interface SiteOrder { id: number; order_no: string; source_domain: string; user_id: number; buyer_email: string; currency: string; total_amount: string; refunded_amount: string; status: string; created_at: string; items?: { title: Record<string, string>; quantity: number }[] }

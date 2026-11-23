@@ -31,7 +31,11 @@ func SiteAdminMiddleware(s *siteapp.Service) gin.HandlerFunc {
 		c.Set("site_scope", scope)
 		if scope.Restricted {
 			p := c.FullPath()
-			if !(strings.HasPrefix(p, "/api/v1/admin/site-console/") || p == "/api/v1/admin/authz/me" || p == "/api/v1/admin/password" || strings.HasPrefix(p, "/api/v1/admin/2fa")) {
+			if strings.HasPrefix(p, "/api/v1/admin/product-catalog") && !scope.AllowsAny("product_catalog") {
+				response.ErrorWithHTTPStatus(c, 403, response.CodeForbidden, "Product catalog is not authorized")
+				return
+			}
+			if !(strings.HasPrefix(p, "/api/v1/admin/site-console/") || strings.HasPrefix(p, "/api/v1/admin/product-catalog") || p == "/api/v1/admin/authz/me" || p == "/api/v1/admin/password" || strings.HasPrefix(p, "/api/v1/admin/2fa")) {
 				response.ErrorWithHTTPStatus(c, 403, response.CodeForbidden, "Use the authorized site console")
 				return
 			}
