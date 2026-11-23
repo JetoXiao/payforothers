@@ -17,6 +17,7 @@ func RegisterRoutes(r gin.IRoutes, h *Handler) {
 	r.GET("/product-catalog", h.List)
 	r.POST("/product-catalog/sync", h.Sync)
 	r.PUT("/product-catalog/:id", h.Update)
+	r.DELETE("/product-catalog/:id", h.Delete)
 }
 func (h *Handler) List(c *gin.Context) {
 	page, size := 1, 20
@@ -129,6 +130,23 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	response.Success(c, item)
+}
+
+func (h *Handler) Delete(c *gin.Context) {
+	if !c.GetBool("admin_is_super") {
+		response.ErrorWithHTTPStatus(c, 403, 403, "Only the super administrator can delete product catalog items")
+		return
+	}
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil || id == 0 {
+		response.ErrorWithHTTPStatus(c, 400, 400, "Invalid catalog item")
+		return
+	}
+	if err := h.store.Delete(uint(id)); err != nil {
+		response.ErrorWithHTTPStatus(c, 400, 400, "Unable to delete catalog item")
+		return
+	}
+	response.Success(c, gin.H{"deleted": true})
 }
 
 func catalogMoneyText(raw json.RawMessage) (string, error) {

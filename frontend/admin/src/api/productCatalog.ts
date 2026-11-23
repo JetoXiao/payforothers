@@ -4,4 +4,5 @@ export const productCatalogAPI={
  list:(params?:Record<string,unknown>)=>api.get('/admin/product-catalog',{params}),
  sync:(includeInactive:boolean)=>api.post('/admin/product-catalog/sync',{include_inactive:includeInactive}),
  update:(id:number,data:Record<string,unknown>)=>api.put(`/admin/product-catalog/${id}`,data),
+ remove:(id:number)=>api.delete(`/admin/product-catalog/${id}`),
 }

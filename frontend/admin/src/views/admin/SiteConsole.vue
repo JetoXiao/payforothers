@@ -22,7 +22,7 @@ const tabs: { id: Tab; name: string; subtitle: string }[] = [
   { id: 'visits', name: '访问记录', subtitle: '查看站点访问和浏览器去重记录。' },
   { id: 'settings', name: '站点与管理员', subtitle: '维护站点、HTTPS 和管理员个人授权。' },
 ]
-const activeTab = computed(() => tabs.find(item => item.id === tab.value) || tabs[0])
+const activeTab = computed(() => tabs.find(item => item.id === tab.value) || tabs[0]!)
 const day = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
 const from = ref(day(new Date(Date.now() - 29 * 86400000)))
 const to = ref(day(new Date()))
@@ -85,7 +85,6 @@ async function refreshScope() {
   scope.value = (await sitesAPI.scope()).data.data
   if (!scope.value.is_super && !scope.value.sites.some(s => String(s.id) === selected.value)) selected.value = String(scope.value.sites[0]?.id || '')
 }
-async function changeTab(value: Tab) { tab.value = value; page.value = 1; keyword.value = ''; status.value = ''; await router.push({ path: `/site-console/${value}` }); await load() }
 async function search() { page.value = 1; await load() }
 async function showOrder(row: SiteOrder) {
   const version = ++detailVersion

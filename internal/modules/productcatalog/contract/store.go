@@ -14,4 +14,5 @@ type Store interface {
 	List(Filter) ([]productcatalog.Item, int64, error)
 	Sync(bool) (int, error)
 	Update(uint, map[string]interface{}) (*productcatalog.Item, error)
+	Delete(uint) error
 }

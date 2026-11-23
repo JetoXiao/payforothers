@@ -23,6 +23,7 @@ type Item struct {
 	CostPrice          money.Amount      `gorm:"type:decimal(20,2);not null;default:0" json:"cost_price"`
 	SalePrice          money.Amount      `gorm:"type:decimal(20,2);not null;default:0" json:"sale_price"`
 	FollowProductPrice bool              `gorm:"not null;default:true" json:"follow_product_price"`
+	Excluded            bool              `gorm:"not null;default:false;index" json:"excluded"`
 	ManualStock        int               `gorm:"not null;default:0" json:"manual_stock"`
 	ManualLocked       int               `gorm:"not null;default:0" json:"manual_locked"`
 	ManualSold         int               `gorm:"not null;default:0" json:"manual_sold"`

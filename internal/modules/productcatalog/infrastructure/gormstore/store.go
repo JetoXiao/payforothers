@@ -16,7 +16,7 @@ type Store struct{ db *gorm.DB }
 
 func New(db *gorm.DB) *Store { return &Store{db: db} }
 func (s *Store) List(f productcontract.Filter) ([]productcatalog.Item, int64, error) {
-	q := s.db.Model(&productcatalog.Item{})
+	q := s.db.Model(&productcatalog.Item{}).Where("excluded = ?", false)
 	if f.Search != "" {
 		like := "%" + strings.TrimSpace(f.Search) + "%"
 		q = q.Where("product_slug LIKE ? OR sku_code LIKE ? OR title_json LIKE ?", like, like, like)
@@ -63,6 +63,8 @@ func (s *Store) Sync(includeInactive bool) (int, error) {
 				item = productcatalog.Item{ProductID: p.ID, SKUID: sku.ID, CostPrice: sku.CostPriceAmount, SalePrice: sku.PriceAmount, FollowProductPrice: true, CreatedAt: time.Now()}
 			} else if err != nil {
 				return count, err
+			} else if item.Excluded {
+				continue
 			}
 			item.ProductSlug = p.Slug
 			item.TitleJSON = p.TitleJSON
@@ -89,6 +91,20 @@ func (s *Store) Sync(includeInactive bool) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func (s *Store) Delete(id uint) error {
+	if id == 0 {
+		return errors.New("invalid catalog item")
+	}
+	result := s.db.Model(&productcatalog.Item{}).Where("id = ? AND excluded = ?", id, false).Update("excluded", true)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 func (s *Store) Update(id uint, fields map[string]interface{}) (*productcatalog.Item, error) {
 	if id == 0 || len(fields) == 0 {
