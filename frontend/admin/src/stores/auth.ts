@@ -88,6 +88,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
     permissions: readArrayStorage(PERMISSIONS_KEY),
     permissionsLoaded: false,
     siteRestricted: false,
+    siteGrants: [] as Array<{ product_catalog?: boolean }>,
     challengeToken: '' as string,
     challengeExpiresAt: '' as string,
     requiresTotp: false as boolean,
@@ -155,6 +156,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       const payload = response.data.data
       this.isSuper = Boolean(payload?.is_super)
       this.siteRestricted = !this.isSuper && Boolean(payload?.site_scope?.restricted)
+      this.siteGrants = Array.isArray(payload?.site_scope?.grants) ? payload.site_scope.grants : []
       this.roles = Array.isArray(payload?.roles) ? payload.roles : []
       this.permissions = Array.isArray(payload?.policies) ? buildPermissionKeys(payload.policies) : []
       this.permissionsLoaded = true
@@ -171,7 +173,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       if (this.isSuper) {
         return true
       }
-      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || permission === 'GET:/admin/product-catalog' || permission === 'GET:/admin/2fa/status'
+      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || (permission === 'GET:/admin/product-catalog' && this.siteGrants.some((grant) => grant.product_catalog === true)) || permission === 'GET:/admin/2fa/status'
       const required = parsePermissionKey(permission)
       return this.permissions.some((item) => {
         const granted = parsePermissionKey(item)
@@ -186,6 +188,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
     clearAuthzCache() {
       this.isSuper = false
       this.siteRestricted = false
+      this.siteGrants = []
       this.roles = []
       this.permissions = []
       this.permissionsLoaded = false

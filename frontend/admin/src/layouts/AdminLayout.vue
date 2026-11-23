@@ -149,7 +149,6 @@ const navGroups = computed<NavGroup[]>(() => {
           icon: Boxes,
           permission: 'GET:/admin/products',
         },
-        { label: '商品清单', to: '/product-catalog', icon: Boxes, permission: 'GET:/admin/product-catalog' },
         {
           label: t('admin.navItems.cardSecrets'),
           to: '/card-secrets',
