@@ -10,9 +10,18 @@ const route = useRoute()
 const router = useRouter()
 const scope = ref<SiteScope>({ restricted: true, is_super: false, grants: [], sites: [], base_domain: '' })
 const selected = ref('')
-const routeTab = () => ['overview', 'users', 'orders', 'visits', 'settings'].includes(String(route.params.section)) ? String(route.params.section) as Tab : 'overview'
+const routeTab = () => {
+  const section = String(route.path).split('/').filter(Boolean).pop() || 'overview'
+  return ['overview', 'users', 'orders', 'visits', 'settings'].includes(section) ? section as Tab : 'overview'
+}
 const tab = ref<Tab>(routeTab())
-const tabs: { id: Tab; name: string }[] = [{ id: 'overview', name: '经营统计' }, { id: 'users', name: '注册用户' }, { id: 'orders', name: '来源订单' }, { id: 'visits', name: '访问记录' }, { id: 'settings', name: '站点与管理员' }]
+const tabs: { id: Tab; name: string; subtitle: string }[] = [
+  { id: 'overview', name: '经营统计', subtitle: '查看订单、收入、成本与估算毛利。' },
+  { id: 'users', name: '注册用户', subtitle: '查看按子站归属的注册用户。' },
+  { id: 'orders', name: '来源订单', subtitle: '查看订单来源、用户类型与金额状态。' },
+  { id: 'visits', name: '访问记录', subtitle: '查看站点访问和浏览器去重记录。' },
+  { id: 'settings', name: '站点与管理员', subtitle: '维护站点、HTTPS 和管理员个人授权。' },
+]
 const day = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
 const from = ref(day(new Date(Date.now() - 29 * 86400000)))
 const to = ref(day(new Date()))
@@ -121,7 +130,7 @@ async function saveGrants() {
 }
 watch(() => route.params.section, (value) => { const next = String(value || 'overview') as Tab; if (tabs.some(item => item.id === next) && next !== tab.value) { tab.value = next; page.value = 1; load() } })
 onMounted(async () => {
-  if (!route.params.section) await router.replace({ path: '/site-console/overview' })
+  if (route.path === '/site-console') await router.replace({ path: '/site-console/overview' })
   try { await refreshScope(); if (scope.value.is_super) admins.value = (await adminAPI.listAuthzAdmins()).data.data.filter((a: any) => !a.is_super); await load() } catch (e: any) { message.value = e.message }
 })
 </script>
@@ -135,7 +144,7 @@ onMounted(async () => {
       <label>起始日期<input v-model="from" type="date" /></label><label>结束日期<input v-model="to" type="date" /></label>
       <button :disabled="busy" @click="search">{{ busy ? '加载中…' : '查询' }}</button>
     </div>
-    <nav class="tab-bar"><button v-for="item in menus" :key="item.id" :class="{ active: tab === item.id }" @click="changeTab(item.id)">{{ item.name }}</button></nav>
+    <nav class="tab-bar"><button v-for="item in menus" :key="item.id" :class="{ active: tab === item.id }" @click="changeTab(item.id)"><strong>{{ item.name }}</strong><small>{{ item.subtitle }}</small></button></nav>
     <p v-if="message" role="status" class="notice">{{ message }}</p>
     <template v-if="tab === 'overview' && overview">
       <div class="metrics"><article><small>本期注册用户</small><strong>{{ overview.registered_users }}</strong><span>按注册来源归属</span></article><article><small>独立浏览器访问</small><strong>{{ overview.browser_visits }}</strong><span>按站点与日期去重</span></article><article><small>统计币种</small><strong>{{ overview.by_currency.length }}</strong><span>订单金额分币种展示</span></article></div>

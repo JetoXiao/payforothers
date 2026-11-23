@@ -1,6 +1,7 @@
 package cataloghttp
 
 import (
+	"encoding/json"
 	"github.com/dujiao-next/internal/modules/productcatalog/contract"
 	"github.com/dujiao-next/internal/platform/http/response"
 	"github.com/gin-gonic/gin"
@@ -82,28 +83,38 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	var req struct {
-		CostPrice          *string `json:"cost_price"`
-		SalePrice          *string `json:"sale_price"`
-		FollowProductPrice *bool   `json:"follow_product_price"`
+		CostPrice          json.RawMessage `json:"cost_price"`
+		SalePrice          json.RawMessage `json:"sale_price"`
+		FollowProductPrice *bool           `json:"follow_product_price"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorWithHTTPStatus(c, 400, 400, "Invalid catalog item")
 		return
 	}
 	fields := map[string]interface{}{}
-	if req.CostPrice != nil {
-		if value, err := decimal.NewFromString(strings.TrimSpace(*req.CostPrice)); err != nil || value.IsNegative() {
+	if len(req.CostPrice) > 0 && string(req.CostPrice) != "null" {
+		valueText, err := catalogMoneyText(req.CostPrice)
+		if err != nil {
 			response.ErrorWithHTTPStatus(c, 400, 400, "Invalid cost price")
 			return
 		}
-		fields["cost_price"] = *req.CostPrice
+		if value, err := decimal.NewFromString(valueText); err != nil || value.IsNegative() {
+			response.ErrorWithHTTPStatus(c, 400, 400, "Invalid cost price")
+			return
+		}
+		fields["cost_price"] = valueText
 	}
-	if req.SalePrice != nil {
-		if value, err := decimal.NewFromString(strings.TrimSpace(*req.SalePrice)); err != nil || value.IsNegative() {
+	if len(req.SalePrice) > 0 && string(req.SalePrice) != "null" {
+		valueText, err := catalogMoneyText(req.SalePrice)
+		if err != nil {
 			response.ErrorWithHTTPStatus(c, 400, 400, "Invalid sale price")
 			return
 		}
-		fields["sale_price"] = *req.SalePrice
+		if value, err := decimal.NewFromString(valueText); err != nil || value.IsNegative() {
+			response.ErrorWithHTTPStatus(c, 400, 400, "Invalid sale price")
+			return
+		}
+		fields["sale_price"] = valueText
 	}
 	if req.FollowProductPrice != nil {
 		fields["follow_product_price"] = *req.FollowProductPrice
@@ -118,4 +129,19 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 	response.Success(c, item)
+}
+
+func catalogMoneyText(raw json.RawMessage) (string, error) {
+	var text string
+	if len(raw) > 0 && raw[0] == '"' {
+		if err := json.Unmarshal(raw, &text); err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(text), nil
+	}
+	var number json.Number
+	if err := json.Unmarshal(raw, &number); err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(number.String()), nil
 }
