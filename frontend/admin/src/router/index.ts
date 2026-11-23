@@ -34,7 +34,7 @@ const routes = [
         path: `site-console/${section}`,
         name: `site-console-${section}`,
         component: () => import('@/views/admin/SiteConsole.vue'),
-        meta: { permission: 'GET:/admin/site-console/scope' },
+        meta: { permission: `GET:/admin/site-console/${section}` },
       })),
       {
         path: 'product-catalog',
@@ -443,7 +443,8 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (to.meta.requiresAuth && authStore.siteRestricted && !to.path.startsWith('/site-console') && !['/security', '/forbidden'].includes(to.path)) {
+  const restrictedAdminLandingAllowed = to.path.startsWith('/site-console') || to.path === '/product-catalog' || ['/security', '/forbidden'].includes(to.path)
+  if (to.meta.requiresAuth && authStore.siteRestricted && !restrictedAdminLandingAllowed) {
     return { path: '/site-console/overview' }
   }
 

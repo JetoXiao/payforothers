@@ -124,11 +124,22 @@ async function saveGrants() {
   if (!grantsLoaded.value || busy.value || grantsForAdmin.value !== adminID.value) return
   busy.value = true; message.value = ''
   try {
-    await sitesAPI.saveGrants(Number(adminID.value), grants.value.filter(g => g.overview || g.users || g.orders || g.visits))
+    await sitesAPI.saveGrants(Number(adminID.value), grants.value.filter(g => g.overview || g.users || g.orders || g.visits || g.product_catalog))
     message.value = `已保存 ${selectedAdmin.value?.username || adminID.value} 的个人菜单授权，立即生效。同一子站其他管理员的权限保持不变。`
   } catch (e: any) { message.value = e.message } finally { busy.value = false }
 }
-watch(() => route.params.section, (value) => { const next = String(value || 'overview') as Tab; if (tabs.some(item => item.id === next) && next !== tab.value) { tab.value = next; page.value = 1; load() } })
+// The child routes are declared as independent static paths (for example
+// `/site-console/users`), so they do not expose a `section` route param.
+// Watch the actual path to keep the reused SiteConsole instance in sync when
+// navigating between two sibling menu items.
+watch(() => route.path, (path) => {
+  const next = String(path).split('/').filter(Boolean).pop() as Tab || 'overview'
+  if (tabs.some(item => item.id === next) && next !== tab.value) {
+    tab.value = next
+    page.value = 1
+    load()
+  }
+})
 onMounted(async () => {
   if (route.path === '/site-console') await router.replace({ path: '/site-console/overview' })
   try { await refreshScope(); if (scope.value.is_super) admins.value = (await adminAPI.listAuthzAdmins()).data.data.filter((a: any) => !a.is_super); await load() } catch (e: any) { message.value = e.message }
@@ -147,11 +158,40 @@ onMounted(async () => {
     <section class="page-switcher"><div><span class="eyebrow">子站数据中心</span><h2>{{ activeTab.name }}</h2><p>{{ activeTab.subtitle }}</p></div><div class="page-dots"><span v-for="item in menus" :key="item.id" :class="{ active: item.id === tab }" :title="item.name" /></div></section>
     <p v-if="message" role="status" class="notice">{{ message }}</p>
     <template v-if="tab === 'overview' && overview">
-      <div class="metrics"><article><small>本期注册用户</small><strong>{{ overview.registered_users }}</strong><span>按注册来源归属</span></article><article><small>独立浏览器访问</small><strong>{{ overview.browser_visits }}</strong><span>按站点与日期去重</span></article><article><small>统计币种</small><strong>{{ overview.by_currency.length }}</strong><span>订单金额分币种展示</span></article></div>
-      <div class="table-card"><div class="table-caption"><div><h2>来源经营统计</h2><p>仅统计所选站点的主订单，金额按币种拆分。</p></div></div><div class="table-wrap"><table><thead><tr><th>币种</th><th>订单数</th><th>已付款</th><th>销售金额</th><th>退款</th><th>净收入</th><th>成本</th><th>手续费</th><th>估算毛利</th></tr></thead><tbody><tr v-for="row in overview.by_currency" :key="row.currency"><td><strong>{{ row.currency }}</strong></td><td>{{ row.orders }}</td><td>{{ row.paid_orders }}</td><td>{{ row.sales }}</td><td>{{ row.refunds }}</td><td>{{ row.net_revenue }}</td><td>{{ row.cost }}</td><td>{{ row.payment_fees }}</td><td class="profit">{{ row.profit }}</td></tr></tbody></table></div></div>
-      <p v-if="!overview.by_currency.length">当前范围没有订单。</p>
+      <section class="overview-shell">
+        <div class="overview-hero">
+          <div>
+            <span class="eyebrow">经营分析仪表盘</span>
+            <h2>来源经营统计</h2>
+            <p>订单、收入、成本与估算毛利按来源和币种实时汇总。</p>
+          </div>
+          <div class="period-chip"><span>统计周期</span><strong>{{ from }} 至 {{ to }}</strong></div>
+        </div>
+        <div class="metrics overview-metrics">
+          <article class="metric-card metric-card-users"><div class="metric-icon">人</div><div><small>本期注册用户</small><strong>{{ overview.registered_users }}</strong><span>按注册来源归属</span></div></article>
+          <article class="metric-card metric-card-visits"><div class="metric-icon">访</div><div><small>独立浏览器访问</small><strong>{{ overview.browser_visits }}</strong><span>按站点与日期去重</span></div></article>
+          <article class="metric-card metric-card-currency"><div class="metric-icon">¤</div><div><small>统计币种</small><strong>{{ overview.by_currency.length }}</strong><span>订单金额分币种展示</span></div></article>
+        </div>
+        <section class="currency-panel">
+          <div class="panel-heading"><div><span class="eyebrow">数据分布</span><h3>订单与利润</h3><p>仅统计所选站点的主订单，金额按币种拆分。</p></div><span class="panel-status">{{ overview.by_currency.length }} 个币种</span></div>
+          <div v-if="overview.by_currency.length" class="currency-grid">
+            <article v-for="row in overview.by_currency" :key="row.currency" class="currency-card">
+              <header class="currency-card-head"><div><span class="currency-badge">{{ row.currency }}</span><span class="currency-orders">{{ row.paid_orders }} / {{ row.orders }} 笔已付款</span></div><div class="profit-block"><small>估算毛利</small><strong>{{ row.profit }}</strong></div></header>
+              <div class="currency-metrics">
+                <div><span>销售金额</span><strong>{{ row.sales }}</strong></div>
+                <div><span>净收入</span><strong>{{ row.net_revenue }}</strong></div>
+                <div><span>退款</span><strong>{{ row.refunds }}</strong></div>
+                <div><span>成本</span><strong>{{ row.cost }}</strong></div>
+                <div><span>支付手续费</span><strong>{{ row.payment_fees }}</strong></div>
+                <div><span>订单数</span><strong>{{ row.orders }}</strong></div>
+              </div>
+            </article>
+          </div>
+          <div v-else class="empty-state"><span class="empty-state-icon">⌁</span><strong>当前范围没有订单</strong><p>调整站点或日期范围后重新查询。</p></div>
+        </section>
+      </section>
       <p v-for="row in overview.by_currency.filter(r => r.missing_cost_orders > 0)" :key="row.currency" class="notice">{{ row.currency }} 中有 {{ row.missing_cost_orders }} 笔已付订单包含零成本商品，毛利可能高估，请核对成本。</p>
-      <p class="muted">按订单创建日期统计截至现在的累计金额，仅计主订单，不重复计算拆单。净收入扣除退款及发票税额；成本使用订单项快照，退款不自动冲回成本。支付手续费仅计算商家承担部分并扣已退手续费。毛利不含人工、营销及其他税负，多币种分别统计。日期时区：Asia/Shanghai。</p>
+      <p class="muted">按订单创建日期统计，仅计成交主订单，不重复计算拆单。总成本 = 成交订单商品数量 × 商品清单中当前手工配置的成本价。商品清单没有对应 SKU 或成本为 0 时会提示缺失成本。净收入扣除退款及发票税额，支付手续费扣除已退手续费。毛利不含人工、营销及其他税负，多币种分别统计。日期时区：Asia/Shanghai。</p>
     </template>
     <template v-if="tab === 'users' || tab === 'orders' || tab === 'visits'">
       <div v-if="tab !== 'visits'" class="filters"><input v-model="keyword" :placeholder="tab === 'orders' ? '搜索订单号' : '搜索注册邮箱或昵称'" @keyup.enter="search" /><select v-if="tab === 'orders'" v-model="status"><option value="">全部订单状态</option><option v-for="s in ['pending_payment', 'paid', 'fulfilling', 'delivered', 'completed', 'partially_refunded', 'refunded', 'canceled']" :key="s" :value="s">{{ s }}</option></select><button @click="search">搜索</button></div>
@@ -187,9 +227,51 @@ header p,.muted { color: hsl(var(--muted-foreground)); line-height: 1.7; font-si
 .site-actions { display:flex; flex-wrap:wrap; gap:7px; } .cert-expiry { display:block; margin-top:4px; font-size:10px; }
 .grant-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px 0; } .grant-item { padding:11px; border:1px solid hsl(var(--border)); border-radius:10px; background:hsl(var(--muted)/.2); }
 .user-type { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:11px; font-weight:650; white-space:nowrap; } .user-type.registered { color:#1d4ed8; background:#eff6ff; } .user-type.guest { color:#a16207; background:#fefce8; }
+.overview-shell { display:grid; gap:18px; min-width:0; }
+.overview-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; padding:2px 2px 0; min-width:0; }
+.overview-hero h2 { margin:5px 0 3px; font-size:25px; letter-spacing:-.02em; }
+.overview-hero p { margin:0; color:hsl(var(--muted-foreground)); font-size:13px; }
+.period-chip { display:grid; gap:3px; min-width:170px; padding:11px 14px; border:1px solid #ccfbf1; border-radius:12px; background:linear-gradient(135deg,#f0fdfa,#ecfeff); color:#0f766e; }
+.period-chip span { font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:.06em; }
+.period-chip strong { font-size:12px; font-weight:700; }
+.overview-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.metric-card { display:flex; align-items:center; gap:13px; min-width:0; padding:18px; border:1px solid hsl(var(--border)); border-radius:16px; background:hsl(var(--card)); box-shadow:0 12px 30px rgb(15 23 42 / .06); }
+.metric-card-users { background:linear-gradient(135deg,#fff 0%,#f0fdfa 100%); }
+.metric-card-visits { background:linear-gradient(135deg,#fff 0%,#eff6ff 100%); }
+.metric-card-currency { background:linear-gradient(135deg,#fff 0%,#fff7ed 100%); }
+.metric-icon { display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px; border-radius:13px; color:#fff; background:#0f766e; font-size:17px; font-weight:750; }
+.metric-card-visits .metric-icon { background:#2563eb; }
+.metric-card-currency .metric-icon { background:#ea580c; }
+.metric-card small,.metric-card span { color:hsl(var(--muted-foreground)); font-size:12px; }
+.metric-card strong { display:block; margin-top:3px; font-size:29px; line-height:1.1; letter-spacing:-.03em; }
+.metric-card span { display:block; margin-top:5px; }
+.currency-panel { min-width:0; padding:20px; border:1px solid hsl(var(--border)); border-radius:18px; background:linear-gradient(180deg,hsl(var(--card)),hsl(var(--card) / .92)); box-shadow:0 16px 42px rgb(15 23 42 / .07); }
+.panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid hsl(var(--border)); min-width:0; }
+.panel-heading h3 { margin:4px 0 2px; font-size:19px; }
+.panel-heading p { margin:0; color:hsl(var(--muted-foreground)); font-size:12px; }
+.panel-status { flex:0 0 auto; padding:6px 10px; border-radius:999px; background:hsl(var(--muted) / .6); color:hsl(var(--muted-foreground)); font-size:11px; font-weight:650; }
+.currency-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:14px; padding-top:16px; min-width:0; }
+.currency-card { min-width:0; padding:17px; border:1px solid hsl(var(--border)); border-radius:14px; background:hsl(var(--background) / .72); box-shadow:0 8px 24px rgb(15 23 42 / .04); }
+.currency-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding-bottom:14px; border-bottom:1px solid hsl(var(--border)); min-width:0; }
+.currency-card-head > div:first-child { display:flex; align-items:center; flex-wrap:wrap; gap:9px; min-width:0; }
+.currency-badge { display:inline-grid; place-items:center; min-width:45px; height:28px; padding:0 10px; border-radius:9px; background:#0f766e; color:#fff; font-size:12px; font-weight:750; letter-spacing:.04em; }
+.currency-orders { color:hsl(var(--muted-foreground)); font-size:11px; }
+.profit-block { display:grid; gap:2px; text-align:right; flex:0 0 auto; }
+.profit-block small { color:hsl(var(--muted-foreground)); font-size:10px; }
+.profit-block strong { color:#047857; font-size:19px; line-height:1.1; }
+.currency-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 10px; padding-top:16px; }
+.currency-metrics div { display:grid; gap:4px; min-width:0; }
+.currency-metrics span { color:hsl(var(--muted-foreground)); font-size:11px; }
+.currency-metrics strong { overflow:hidden; color:hsl(var(--foreground)); font-size:14px; font-variant-numeric:tabular-nums; text-overflow:ellipsis; white-space:nowrap; }
+.empty-state { display:grid; justify-items:center; gap:5px; padding:42px 16px 28px; color:hsl(var(--muted-foreground)); text-align:center; }
+.empty-state-icon { display:grid; place-items:center; width:40px; height:40px; margin-bottom:3px; border-radius:12px; background:hsl(var(--muted)); color:#0f766e; font-size:21px; }
+.empty-state strong { color:hsl(var(--foreground)); font-size:14px; }
+.empty-state p { margin:0; font-size:12px; }
 .modal-backdrop { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:rgb(15 23 42 / .44); backdrop-filter:blur(3px); }
 .modal-card { width:min(100%, 640px); max-height:min(86vh, 760px); overflow:auto; border:1px solid hsl(var(--border)); border-radius:18px; background:hsl(var(--card)); box-shadow:0 24px 80px rgb(15 23 42 / .28); padding:22px; }
 .modal-header { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; border-bottom:1px solid hsl(var(--border)); padding-bottom:15px; } .modal-header h2 { margin-top:4px; font-size:20px; } .eyebrow { color:#0f766e; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; } .icon-button { width:32px; height:32px; padding:0; border-radius:9px; font-size:22px; line-height:1; color:hsl(var(--muted-foreground)); }
 .order-summary { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:16px 0 11px; font-size:13px; color:hsl(var(--muted-foreground)); } .order-summary strong { margin-left:auto; color:hsl(var(--foreground)); font-size:16px; } .modal-items { display:grid; gap:9px; margin-top:16px; border-top:1px solid hsl(var(--border)); padding-top:14px; } .item-row { display:flex; justify-content:space-between; gap:16px; padding:11px 12px; border-radius:10px; background:hsl(var(--muted)/.28); font-size:13px; } .site-modal { width:min(100%, 520px); } .modal-form { display:grid; gap:15px; padding:20px 0; } .modal-form label { display:grid; gap:7px; align-items:stretch; } .modal-form input:not([type=checkbox]) { width:100%; } .checkbox-line { display:flex !important; align-items:center !important; flex-direction:row; } .modal-actions { display:flex; justify-content:flex-end; gap:9px; border-top:1px solid hsl(var(--border)); padding-top:15px; }
+@media (max-width:900px) { .overview-hero { align-items:flex-start; flex-direction:column; } .period-chip { min-width:0; } .overview-metrics { grid-template-columns:1fr; } }
+@media (max-width:560px) { .currency-grid { grid-template-columns:1fr; } .currency-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .currency-panel { padding:14px; } .currency-card { padding:14px; } }
 @media (max-width:720px) { .page-header { align-items:flex-start; flex-direction:column; } .scope-badge { align-self:flex-start; } .metrics { grid-template-columns:1fr; } }
 </style>

@@ -34,12 +34,13 @@ func (s *Store) Overview(f sitecontract.Filter) (sitecontract.Overview, error) {
 			Cost                decimal.Decimal
 			MissingCostOrders   int64
 		}
-		// The correlated item aggregate prevents a main order from multiplying with its children.
+		// The cost calculation uses the current manual cost from the product catalog.
+		// Order item snapshots remain available for historical order details, but they do not drive this report.
 		err := q.Select(`COUNT(*) AS paid_orders, COALESCE(SUM(orders.total_amount),0) AS sales,
 		COALESCE(SUM(orders.refunded_amount),0) AS refunds,
 		COALESCE(SUM(CASE WHEN orders.total_amount > 0 THEN orders.invoice_tax_amount * (1.0-1.0*orders.refunded_amount/orders.total_amount) ELSE 0 END),0) AS tax,
-		COALESCE(SUM((SELECT COALESCE(SUM(i.cost_price*i.quantity),0) FROM order_items i JOIN orders child ON child.id=i.order_id WHERE i.deleted_at IS NULL AND child.deleted_at IS NULL AND (child.id=orders.id OR child.parent_id=orders.id))),0) AS cost,
-		COALESCE(SUM(CASE WHEN EXISTS(SELECT 1 FROM order_items i JOIN orders child ON child.id=i.order_id WHERE i.deleted_at IS NULL AND child.deleted_at IS NULL AND (child.id=orders.id OR child.parent_id=orders.id) AND i.cost_price=0) THEN 1 ELSE 0 END),0) AS missing_cost_orders`).Scan(&row).Error
+		COALESCE(SUM((SELECT COALESCE(SUM(catalog.cost_price*i.quantity),0) FROM order_items i JOIN orders child ON child.id=i.order_id LEFT JOIN product_catalog_items catalog ON catalog.product_id=i.product_id AND catalog.sku_id=i.sku_id AND catalog.excluded=0 WHERE i.deleted_at IS NULL AND child.deleted_at IS NULL AND (child.id=orders.id OR child.parent_id=orders.id))),0) AS cost,
+		COALESCE(SUM(CASE WHEN EXISTS(SELECT 1 FROM order_items i JOIN orders child ON child.id=i.order_id LEFT JOIN product_catalog_items catalog ON catalog.product_id=i.product_id AND catalog.sku_id=i.sku_id AND catalog.excluded=0 WHERE i.deleted_at IS NULL AND child.deleted_at IS NULL AND (child.id=orders.id OR child.parent_id=orders.id) AND (catalog.id IS NULL OR catalog.cost_price=0)) THEN 1 ELSE 0 END),0) AS missing_cost_orders`).Scan(&row).Error
 		if err != nil {
 			return out, err
 		}

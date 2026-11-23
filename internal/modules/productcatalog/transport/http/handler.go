@@ -3,6 +3,7 @@ package cataloghttp
 import (
 	"encoding/json"
 	"github.com/dujiao-next/internal/modules/productcatalog/contract"
+	sitedomain "github.com/dujiao-next/internal/modules/site/domain"
 	"github.com/dujiao-next/internal/platform/http/response"
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -20,6 +21,10 @@ func RegisterRoutes(r gin.IRoutes, h *Handler) {
 	r.DELETE("/product-catalog/:id", h.Delete)
 }
 func (h *Handler) List(c *gin.Context) {
+	if !catalogReadAllowed(c) {
+		response.ErrorWithHTTPStatus(c, 403, 403, "Product catalog is not authorized")
+		return
+	}
 	page, size := 1, 20
 	if v, e := strconv.Atoi(c.Query("page")); e == nil && v > 0 {
 		page = v
@@ -52,6 +57,18 @@ func (h *Handler) List(c *gin.Context) {
 		})
 	}
 	response.SuccessWithPage(c, out, response.BuildPagination(page, size, total))
+}
+
+func catalogReadAllowed(c *gin.Context) bool {
+	if c.GetBool("admin_is_super") {
+		return true
+	}
+	scopeValue, ok := c.Get("site_scope")
+	if !ok {
+		return false
+	}
+	scope, ok := scopeValue.(sitedomain.Scope)
+	return ok && scope.AllowsAny("product_catalog")
 }
 func (h *Handler) Sync(c *gin.Context) {
 	if !c.GetBool("admin_is_super") {
