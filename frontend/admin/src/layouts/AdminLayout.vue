@@ -126,7 +126,7 @@ watch(() => route.path, () => {
 
 const navGroups = computed<NavGroup[]>(() => {
   const groups: NavGroup[] = [
-    { id: 'site-console', label: '子站管理', icon: Users, items: [{ label: '子站工作台', to: '/site-console', icon: Users, permission: 'GET:/admin/site-console/scope' }] },
+    { id: 'site-console', label: '子站管理', icon: Users, items: [{ label: '子站工作台', to: '/site-console/overview', icon: Users, permission: 'GET:/admin/site-console/scope' }] },
     {
       id: 'products',
       label: t('admin.navGroups.productManagement'),

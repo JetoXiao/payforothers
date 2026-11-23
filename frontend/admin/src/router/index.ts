@@ -30,6 +30,12 @@ const routes = [
         component: () => import('@/views/admin/SiteConsole.vue'),
         meta: { permission: 'GET:/admin/site-console/scope' },
       },
+      ...(['overview', 'users', 'orders', 'visits', 'settings'] as const).map((section) => ({
+        path: `site-console/${section}`,
+        name: `site-console-${section}`,
+        component: () => import('@/views/admin/SiteConsole.vue'),
+        meta: { permission: 'GET:/admin/site-console/scope' },
+      })),
       {
         path: 'product-catalog',
         name: 'product-catalog',
@@ -437,8 +443,8 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (to.meta.requiresAuth && authStore.siteRestricted && !['/site-console', '/security', '/forbidden'].includes(to.path)) {
-    return { path: '/site-console' }
+  if (to.meta.requiresAuth && authStore.siteRestricted && !to.path.startsWith('/site-console') && !['/security', '/forbidden'].includes(to.path)) {
+    return { path: '/site-console/overview' }
   }
 
   const requiredPermission = typeof to.meta.permission === 'string' ? to.meta.permission : ''
