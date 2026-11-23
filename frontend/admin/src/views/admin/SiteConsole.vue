@@ -22,6 +22,7 @@ const tabs: { id: Tab; name: string; subtitle: string }[] = [
   { id: 'visits', name: '访问记录', subtitle: '查看站点访问和浏览器去重记录。' },
   { id: 'settings', name: '站点与管理员', subtitle: '维护站点、HTTPS 和管理员个人授权。' },
 ]
+const activeTab = computed(() => tabs.find(item => item.id === tab.value) || tabs[0])
 const day = (date: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
 const from = ref(day(new Date(Date.now() - 29 * 86400000)))
 const to = ref(day(new Date()))
@@ -144,7 +145,7 @@ onMounted(async () => {
       <label>起始日期<input v-model="from" type="date" /></label><label>结束日期<input v-model="to" type="date" /></label>
       <button :disabled="busy" @click="search">{{ busy ? '加载中…' : '查询' }}</button>
     </div>
-    <nav class="tab-bar"><button v-for="item in menus" :key="item.id" :class="{ active: tab === item.id }" @click="changeTab(item.id)"><strong>{{ item.name }}</strong><small>{{ item.subtitle }}</small></button></nav>
+    <section class="page-switcher"><div><span class="eyebrow">子站数据中心</span><h2>{{ activeTab.name }}</h2><p>{{ activeTab.subtitle }}</p></div><div class="page-dots"><span v-for="item in menus" :key="item.id" :class="{ active: item.id === tab }" :title="item.name" /></div></section>
     <p v-if="message" role="status" class="notice">{{ message }}</p>
     <template v-if="tab === 'overview' && overview">
       <div class="metrics"><article><small>本期注册用户</small><strong>{{ overview.registered_users }}</strong><span>按注册来源归属</span></article><article><small>独立浏览器访问</small><strong>{{ overview.browser_visits }}</strong><span>按站点与日期去重</span></article><article><small>统计币种</small><strong>{{ overview.by_currency.length }}</strong><span>订单金额分币种展示</span></article></div>
