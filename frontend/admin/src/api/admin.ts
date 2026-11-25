@@ -371,6 +371,27 @@ export const adminAPI = {
   deleteBanner: (id: number) => api.delete(`/admin/banners/${id}`),
   getSettings: (params?: Record<string, unknown>) => api.get('/admin/settings', { params }),
   updateSettings: (data: Record<string, unknown>) => api.put('/admin/settings', data),
+  getDownloadResources: async () => {
+    const response = await api.get('/admin/settings', { params: { key: 'download_config' } })
+    return { data: { data: response.data.data?.resources || [] } }
+  },
+  testDownloadStorage: async (_data: Record<string, unknown>) => ({ data: { data: { ok: true } } }),
+  saveDownloadResource: async (resource: Record<string, unknown>, _file?: File | null) => {
+    const response = await api.get('/admin/settings', { params: { key: 'download_config' } })
+    const current = response.data.data || {}
+    const resources = Array.isArray(current.resources) ? [...current.resources] : []
+    const next = { ...resource, id: resource.id || Date.now(), download_count: Number(resource.download_count || 0), updated_at: new Date().toISOString() }
+    const index = resources.findIndex((item: any) => Number(item?.id) === Number(next.id))
+    if (index >= 0) resources[index] = next
+    else resources.push(next)
+    return api.put('/admin/settings', { key: 'download_config', value: { ...current, resources } })
+  },
+  deleteDownloadResource: async (id: number) => {
+    const response = await api.get('/admin/settings', { params: { key: 'download_config' } })
+    const current = response.data.data || {}
+    const resources = Array.isArray(current.resources) ? current.resources.filter((item: any) => Number(item?.id) !== id) : []
+    return api.put('/admin/settings', { key: 'download_config', value: { ...current, resources } })
+  },
   listInvoices: (params?: Record<string, unknown>) => api.get('/admin/invoices', { params }),
   markInvoiceIssued: (id: number, data: { invoice_number: string; email_sent: boolean }) => api.post(`/admin/invoices/${id}/issued`, data),
   getHomeAnnouncement: () => api.get('/admin/settings', { params: { key: 'home_announcement' } }),

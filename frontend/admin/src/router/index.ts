@@ -209,6 +209,12 @@ const routes = [
         meta: { permission: 'GET:/admin/settings' },
       },
       {
+        path: 'downloads-admin',
+        name: 'downloads-admin',
+        component: () => import('@/views/admin/DownloadsAdmin.vue'),
+        meta: { permission: 'GET:/admin/settings' },
+      },
+      {
         path: 'settings/notifications',
         name: 'notifications',
         component: () => import('@/views/admin/Notifications.vue'),

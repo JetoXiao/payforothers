@@ -140,6 +140,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 			"enabled":      true,
 			"manifest_url": "",
 			"public_url":   "",
+			"resources":    make([]interface{}, 0),
 		},
 	}
 
@@ -252,6 +253,19 @@ func (h *Handler) GetConfig(c *gin.Context) {
 
 	if announcement, ok := h.settings.GetActiveHomeAnnouncement(); ok {
 		data["announcement"] = announcement
+	}
+	if downloadConfig, downloadErr := h.settings.GetByKey(constants.SettingKeySiteConfig); downloadErr == nil {
+		if configMap, ok := downloadConfig.(map[string]interface{}); ok {
+			if downloads, ok := configMap["downloads"].(map[string]interface{}); ok {
+			publicDownloads := map[string]interface{}{
+				"enabled": downloads["enabled"],
+				"manifest_url": downloads["manifest_url"],
+				"public_url": downloads["public_url"],
+				"resources": downloads["resources"],
+			}
+			data["downloads"] = publicDownloads
+			}
+		}
 	}
 
 	if h.overlay != nil {

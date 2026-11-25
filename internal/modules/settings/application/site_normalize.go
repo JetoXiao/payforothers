@@ -203,6 +203,8 @@ func normalizeSiteDownloads(raw interface{}) map[string]interface{} {
 		"enabled":      true,
 		"manifest_url": "",
 		"public_url":   "",
+		"resources":    []interface{}{},
+		"r2":           map[string]interface{}{},
 	}
 	downloads, ok := raw.(map[string]interface{})
 	if !ok {
@@ -211,6 +213,16 @@ func normalizeSiteDownloads(raw interface{}) map[string]interface{} {
 	result["enabled"] = parseSettingBool(downloads["enabled"])
 	result["manifest_url"] = normalizePublicResourceURL(downloads["manifest_url"])
 	result["public_url"] = normalizePublicResourceURL(downloads["public_url"])
+	if resources, ok := downloads["resources"].([]interface{}); ok {
+		result["resources"] = resources
+	}
+	if rawR2, ok := downloads["r2"].(map[string]interface{}); ok {
+		r2 := map[string]interface{}{}
+		for _, key := range []string{"endpoint", "bucket", "access_key_id", "secret_access_key", "prefix"} {
+			r2[key] = normalizeSettingText(rawR2[key])
+		}
+		result["r2"] = r2
+	}
 	return result
 }
 

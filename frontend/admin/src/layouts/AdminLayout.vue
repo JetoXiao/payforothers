@@ -521,6 +521,12 @@ const navGroups = computed<NavGroup[]>(() => {
           permission: 'GET:/admin/settings',
         },
         {
+          label: '资源下载',
+          to: '/downloads-admin',
+          icon: Download,
+          permission: 'GET:/admin/settings',
+        },
+        {
           label: t('admin.navItems.notificationCenter'),
           to: '/settings/notifications',
           icon: Bell,

@@ -13,6 +13,7 @@ import (
 	categoryhttp "github.com/dujiao-next/internal/modules/catalog/category/transport/http"
 	producthttp "github.com/dujiao-next/internal/modules/catalog/product/transport/http"
 	contenttransport "github.com/dujiao-next/internal/modules/content/transport/http"
+	downloadhttp "github.com/dujiao-next/internal/modules/downloads/transport/http"
 	giftcardtransport "github.com/dujiao-next/internal/modules/giftcard/transport/http"
 	userauthtransport "github.com/dujiao-next/internal/modules/identity/userauth/transport/http"
 	invoicetransport "github.com/dujiao-next/internal/modules/invoice/transport/http"
@@ -88,6 +89,7 @@ func registerStorefrontRoutes(
 		captchatransport.RegisterPublicRoutes(public, captchatransport.NewPublicHandler(c.CaptchaService))
 		affiliatetransport.RegisterPublicRoutes(public, affiliateHandler)
 		memberleveltransport.RegisterPublicRoutes(public, publicMemberLevelHandler)
+		downloadhttp.RegisterPublicRoutes(public, downloadhttp.NewHandler(c.SettingService))
 	}
 
 	// 游客接口

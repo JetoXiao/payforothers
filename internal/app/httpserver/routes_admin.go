@@ -19,6 +19,7 @@ import (
 	contenttransport "github.com/dujiao-next/internal/modules/content/transport/http"
 	coupontransport "github.com/dujiao-next/internal/modules/coupon/transport/http"
 	dashboardtransport "github.com/dujiao-next/internal/modules/dashboard/transport/http"
+	downloadhttp "github.com/dujiao-next/internal/modules/downloads/transport/http"
 	fulfillmenttransport "github.com/dujiao-next/internal/modules/fulfillment/transport/http"
 	giftcardtransport "github.com/dujiao-next/internal/modules/giftcard/transport/http"
 	adminauthtransport "github.com/dujiao-next/internal/modules/identity/adminauth/transport/http"
@@ -99,6 +100,7 @@ func registerAdminRoutes(
 	if c.SiteStore != nil {
 		admin.Use(middleware.SiteAdminMiddleware(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)))
 	}
+	downloadhttp.RegisterAdminRoutes(authorized, downloadhttp.NewHandler(c.SettingService))
 	authorized := admin.Use(middleware.AdminRBACMiddleware(c.AuthzService))
 	if c.SiteStore != nil {
 		sitehttp.RegisterRoutes(authorized, sitehttp.New(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)).WithAudit(c.AuthzAuditService))
