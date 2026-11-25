@@ -113,7 +113,10 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	}
 	_ = config
 	r2.SecretAccessKey = ""
-	response.Success(c, gin.H{"r2": r2, "resources": resources})
+	response.Success(c, gin.H{"r2": gin.H{
+		"endpoint": r2.Endpoint, "bucket": r2.Bucket, "access_key_id": r2.AccessKeyID,
+		"secret_access_key": "", "secret_saved": r2.SecretAccessKey != "", "prefix": r2.Prefix, "public_url": r2.PublicURL,
+	}, "resources": resources})
 }
 
 func (h *Handler) UpdateConfig(c *gin.Context) {
@@ -146,6 +149,12 @@ func (h *Handler) TestConnection(c *gin.Context) {
 	if err := c.ShouldBindJSON(&cfg); err != nil {
 		ginutil.RespondBindError(c, err)
 		return
+	}
+	if cfg.SecretAccessKey == "" {
+		_, saved, _, loadErr := h.load()
+		if loadErr == nil {
+			cfg.SecretAccessKey = saved.SecretAccessKey
+		}
 	}
 	if err := validateR2(cfg); err != nil {
 		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, err.Error(), nil)
