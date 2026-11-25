@@ -90,6 +90,9 @@ func registerStorefrontRoutes(
 		affiliatetransport.RegisterPublicRoutes(public, affiliateHandler)
 		memberleveltransport.RegisterPublicRoutes(public, publicMemberLevelHandler)
 		downloadhttp.RegisterPublicRoutes(public, downloadhttp.NewHandler(c.SettingService))
+		// Keep a same-origin alias for deployments whose public route group is
+		// mounted behind a legacy proxy prefix.
+		downloadhttp.RegisterPublicRoutes(storefront, downloadhttp.NewHandler(c.SettingService))
 	}
 
 	// 游客接口

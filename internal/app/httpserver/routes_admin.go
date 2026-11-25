@@ -100,8 +100,8 @@ func registerAdminRoutes(
 	if c.SiteStore != nil {
 		admin.Use(middleware.SiteAdminMiddleware(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)))
 	}
-	downloadhttp.RegisterAdminRoutes(authorized, downloadhttp.NewHandler(c.SettingService))
 	authorized := admin.Use(middleware.AdminRBACMiddleware(c.AuthzService))
+	downloadhttp.RegisterAdminRoutes(authorized, downloadhttp.NewHandler(c.SettingService))
 	if c.SiteStore != nil {
 		sitehttp.RegisterRoutes(authorized, sitehttp.New(siteapp.New(c.SiteStore, cfg.Reseller.SubdomainBase, c.ResellerDomainResolver)).WithAudit(c.AuthzAuditService))
 	}

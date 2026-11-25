@@ -179,6 +179,23 @@ const loadManifest = async () => {
   loading.value = true
   loadError.value = false
   try {
+    const configuredResources = Array.isArray((configuredDownloads.value as any).resources) ? normaliseResources((configuredDownloads.value as any).resources) : []
+    if (configuredResources.length) {
+      resources.value = configuredResources
+      usingDemoData.value = false
+      loadError.value = false
+      return
+    }
+    const apiResponse = await fetch('/api/v1/public/downloads/resources', { cache: 'no-store' })
+    if (apiResponse.ok) {
+      const apiResources = normaliseResources(await apiResponse.json())
+      if (apiResources.length) {
+        resources.value = apiResources
+        usingDemoData.value = false
+        loadError.value = false
+        return
+      }
+    }
     const response = await fetch(manifestUrl.value, { cache: 'no-store' })
     if (!response.ok) throw new Error(`manifest request failed: ${response.status}`)
     const next = normaliseResources(await response.json())
