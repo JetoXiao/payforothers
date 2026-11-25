@@ -45,8 +45,8 @@ const editing = reactive<any>({ id: 0, slug: '', title: { zhCN: '', enUS: '' }, 
 const r2Configured = computed(() => Boolean(r2.endpoint && r2.bucket && r2.access_key_id && r2.public_url))
 const publishedCount = computed(() => resources.value.filter(item => item.published).length)
 const totalDownloads = computed(() => resources.value.reduce((sum, item) => sum + Number(item.download_count || 0), 0))
-const load = async () => { const [settings, list] = await Promise.all([adminAPI.getSettings({ key: 'download_config' }), adminAPI.getDownloadResources()]); Object.assign(r2, settings.data.data?.r2 || {}); resources.value = list.data.data || [] }
-const saveR2 = async () => { saving.value = true; try { await adminAPI.updateSettings({ key: 'download_config', value: { r2: { ...r2 } } }); await load() } finally { saving.value = false } }
+const load = async () => { const [settings, list] = await Promise.all([adminAPI.getDownloadConfig(), adminAPI.getDownloadResources()]); Object.assign(r2, settings.data.data?.r2 || {}); resources.value = list.data.data || [] }
+const saveR2 = async () => { saving.value = true; try { await adminAPI.updateDownloadConfig({ r2: { ...r2 } }); await load() } finally { saving.value = false } }
 const testR2 = async () => { saving.value = true; try { await adminAPI.testDownloadStorage({ ...r2 }) } finally { saving.value = false } }
 const resetEditing = () => Object.assign(editing, { id: 0, slug: '', title: { zhCN: '', enUS: '' }, description: { zhCN: '', enUS: '' }, platform: '', version: '', file_key: '', download_name: '', content_type: 'application/octet-stream', sha256: '', published: true, sort_order: 0, file: null })
 const edit = (row: Resource) => { Object.assign(editing, { ...row, title: { zhCN: row.title?.['zh-CN'] || '', enUS: row.title?.['en-US'] || '' }, description: { zhCN: row.description?.['zh-CN'] || '', enUS: row.description?.['en-US'] || '' } }); resourceOpen.value = true }

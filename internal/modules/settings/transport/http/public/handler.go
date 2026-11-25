@@ -164,9 +164,13 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		return
 	}
 	if brand, ok := data["brand"].(map[string]interface{}); ok {
-		if origin, ok := brand["site_url"].(string); ok { data["payment_origin"] = strings.TrimRight(strings.TrimSpace(origin), "/") }
+		if origin, ok := brand["site_url"].(string); ok {
+			data["payment_origin"] = strings.TrimRight(strings.TrimSpace(origin), "/")
+		}
 	}
-	if tenant.SourceSiteID > 0 { data["payment_origin"] = "https://gptpaynow.com" }
+	if tenant.SourceSiteID > 0 {
+		data["payment_origin"] = "https://gptpaynow.com"
+	}
 	if invoiceConfig, invoiceErr := h.settings.GetByKey(constants.SettingKeyInvoiceConfig); invoiceErr == nil && invoiceConfig != nil {
 		data["invoice_config"] = invoiceConfig
 	} else {
@@ -255,15 +259,22 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		data["announcement"] = announcement
 	}
 	if downloadConfig, downloadErr := h.settings.GetByKey(constants.SettingKeySiteConfig); downloadErr == nil {
-		if configMap, ok := downloadConfig.(map[string]interface{}); ok {
-			if downloads, ok := configMap["downloads"].(map[string]interface{}); ok {
-			publicDownloads := map[string]interface{}{
-				"enabled": downloads["enabled"],
-				"manifest_url": downloads["manifest_url"],
-				"public_url": downloads["public_url"],
-				"resources": downloads["resources"],
+		configMap, ok := downloadConfig.(map[string]interface{})
+		if !ok {
+			if jsonValue, jsonOK := downloadConfig.(jsonmap.JSON); jsonOK {
+				configMap = map[string]interface{}(jsonValue)
+				ok = true
 			}
-			data["downloads"] = publicDownloads
+		}
+		if ok {
+			if downloads, ok := configMap["downloads"].(map[string]interface{}); ok {
+				publicDownloads := map[string]interface{}{
+					"enabled":      downloads["enabled"],
+					"manifest_url": downloads["manifest_url"],
+					"public_url":   downloads["public_url"],
+					"resources":    downloads["resources"],
+				}
+				data["downloads"] = publicDownloads
 			}
 		}
 	}
