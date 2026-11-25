@@ -162,7 +162,14 @@ func (h *Handler) TestConnection(c *gin.Context) {
 	}
 	status, err := signedRequest("HEAD", cfg, "", nil, "")
 	if err != nil || status < 200 || status >= 300 {
-		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "R2 连接测试失败", err)
+		detail := "R2 连接测试失败"
+		if status > 0 {
+			detail = fmt.Sprintf("R2 连接测试失败：HTTP %d %s", status, http.StatusText(status))
+		}
+		if err != nil {
+			detail += "；" + err.Error()
+		}
+		ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, detail, nil)
 		return
 	}
 	response.Success(c, gin.H{"ok": true})
@@ -427,6 +434,13 @@ func signedRequest(method string, cfg r2Config, key string, body []byte, content
 		return 0, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		message := strings.TrimSpace(string(body))
+		if message != "" {
+			return resp.StatusCode, fmt.Errorf("R2 返回：%s", message)
+		}
+	}
 	return resp.StatusCode, nil
 }
 func signature(secret string, now time.Time, scope, canonical string) string {
