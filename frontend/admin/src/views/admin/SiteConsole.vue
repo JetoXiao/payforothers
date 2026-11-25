@@ -50,6 +50,7 @@ const editing = ref<Partial<Site>>({ name: '', domain: '', enabled: true })
 const siteEditorOpen = ref(false)
 const certificateBusy = ref<number | null>(null)
 const grantSite = ref<Site | null>(null)
+const assignmentBusy = ref<string | null>(null)
 const params = computed(() => ({ site_id: selected.value === '' ? undefined : Number(selected.value), from: from.value, to: to.value, keyword: keyword.value, status: status.value, page: page.value, page_size: 20 }))
 const can = (menu: Tab) => scope.value.is_super || (menu !== 'settings' && scope.value.grants.some(g => g[menu] === true))
 const sitesForMenu = (menu: Tab) => scope.value.is_super ? scope.value.sites : scope.value.sites.filter(site => menu === 'settings' || scope.value.grants.some(g => g.site_id === site.id && g[menu] === true))
@@ -91,6 +92,26 @@ async function refreshScope() {
   if (!scope.value.is_super && !scope.value.sites.some(s => String(s.id) === selected.value)) selected.value = String(scope.value.sites[0]?.id || '')
 }
 async function search() { page.value = 1; await load() }
+async function assignUserSite(row: SiteUser, siteID: number) {
+  if (!scope.value.is_super) return
+  assignmentBusy.value = `user-${row.id}`
+  try {
+    await sitesAPI.assignUserSite(row.id, siteID)
+    row.registration_site_id = siteID
+    row.registration_domain = scope.value.sites.find(site => site.id === siteID)?.domain || ''
+    message.value = '用户归属已更新。'
+  } catch (e: any) { message.value = e.message || '更新用户归属失败' } finally { assignmentBusy.value = null }
+}
+async function assignOrderSite(row: SiteOrder, siteID: number) {
+  if (!scope.value.is_super) return
+  assignmentBusy.value = `order-${row.id}`
+  try {
+    await sitesAPI.assignOrderSite(row.id, siteID)
+    row.source_site_id = siteID
+    row.source_domain = scope.value.sites.find(site => site.id === siteID)?.domain || ''
+    message.value = '订单归属已更新。'
+  } catch (e: any) { message.value = e.message || '更新订单归属失败' } finally { assignmentBusy.value = null }
+}
 async function showOrder(row: SiteOrder) {
   const version = ++detailVersion
   const query = queryVersion
@@ -200,8 +221,8 @@ onMounted(async () => {
     </template>
     <template v-if="tab === 'users' || tab === 'orders' || tab === 'visits'">
       <div v-if="tab !== 'visits'" class="filters"><input v-model="keyword" :placeholder="tab === 'orders' ? '搜索订单号' : '搜索注册邮箱或昵称'" @keyup.enter="search" /><select v-if="tab === 'orders'" v-model="status"><option value="">全部订单状态</option><option v-for="s in ['pending_payment', 'paid', 'fulfilling', 'delivered', 'completed', 'partially_refunded', 'refunded', 'canceled']" :key="s" :value="s">{{ s }}</option></select><button @click="search">搜索</button></div>
-      <div class="table-card data-panel"><div class="table-caption"><div><span class="eyebrow">数据明细</span><h3>{{ activeTab.name }}</h3><p>{{ activeTab.subtitle }}</p></div><span class="panel-status">共 {{ total }} 条</span></div><div class="table-wrap"><table v-if="tab === 'users'"><thead><tr><th>ID</th><th>注册邮箱</th><th>昵称</th><th>注册来源</th><th>注册时间</th></tr></thead><tbody><tr v-for="row in users" :key="row.id"><td><span class="id-badge">#{{ row.id }}</span></td><td class="primary-cell">{{ row.email }}</td><td>{{ row.display_name || '-' }}</td><td><span class="source-tag">{{ row.registration_domain || '历史来源' }}</span></td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
-      <table v-if="tab === 'orders'"><thead><tr><th>订单</th><th>来源</th><th>用户类型</th><th>买家</th><th>状态</th><th>金额</th><th>退款</th><th>创建时间</th></tr></thead><tbody><tr v-for="row in orders" :key="row.id"><td><button @click="showOrder(row)">{{ row.order_no }}</button></td><td>{{ row.source_domain || '历史来源' }}</td><td><span class="user-type" :class="row.user_id ? 'registered' : 'guest'">{{ row.user_id ? '平台注册用户' : '游客订单' }}</span></td><td>{{ row.buyer_email || '-' }}</td><td>{{ row.status }}</td><td>{{ row.currency }} {{ row.total_amount }}</td><td>{{ row.refunded_amount }}</td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
+      <div class="table-card data-panel"><div class="table-caption"><div><span class="eyebrow">数据明细</span><h3>{{ activeTab.name }}</h3><p>{{ activeTab.subtitle }}</p></div><span class="panel-status">共 {{ total }} 条</span></div><div class="table-wrap"><table v-if="tab === 'users'"><thead><tr><th>ID</th><th>注册邮箱</th><th>昵称</th><th>注册来源</th><th>归属子站</th><th>注册时间</th></tr></thead><tbody><tr v-for="row in users" :key="row.id"><td><span class="id-badge">#{{ row.id }}</span></td><td class="primary-cell">{{ row.email }}</td><td>{{ row.display_name || '-' }}</td><td><span class="source-tag">{{ row.registration_domain || '历史来源' }}</span></td><td><select v-if="scope.is_super" :value="String(row.registration_site_id || 0)" :disabled="assignmentBusy === `user-${row.id}`" @change="assignUserSite(row, Number(($event.target as HTMLSelectElement).value))"><option value="0">未归属 / 主站</option><option v-for="site in scope.sites" :key="site.id" :value="String(site.id)">{{ site.name }}</option></select><span v-else>{{ row.registration_domain || '历史来源' }}</span></td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
+      <table v-if="tab === 'orders'"><thead><tr><th>订单</th><th>来源</th><th>归属子站</th><th>用户类型</th><th>买家</th><th>状态</th><th>金额</th><th>退款</th><th>创建时间</th></tr></thead><tbody><tr v-for="row in orders" :key="row.id"><td><button @click="showOrder(row)">{{ row.order_no }}</button></td><td>{{ row.source_domain || '历史来源' }}</td><td><select v-if="scope.is_super" :value="String(row.source_site_id || 0)" :disabled="assignmentBusy === `order-${row.id}`" @change="assignOrderSite(row, Number(($event.target as HTMLSelectElement).value))"><option value="0">未归属 / 主站</option><option v-for="site in scope.sites" :key="site.id" :value="String(site.id)">{{ site.name }}</option></select><span v-else>{{ row.source_domain || '历史来源' }}</span></td><td><span class="user-type" :class="row.user_id ? 'registered' : 'guest'">{{ row.user_id ? '平台注册用户' : '游客订单' }}</span></td><td>{{ row.buyer_email || '-' }}</td><td>{{ row.status }}</td><td>{{ row.currency }} {{ row.total_amount }}</td><td>{{ row.refunded_amount }}</td><td>{{ fmt(row.created_at) }}</td></tr></tbody></table>
       <table v-if="tab === 'visits'"><thead><tr><th>站点域名</th><th>日期</th><th>IP 地址</th><th>地区</th><th>关联用户</th><th>用户邮箱</th><th>首次访问</th><th>最后访问</th></tr></thead><tbody><tr v-for="row in visits" :key="row.id"><td><span class="source-tag">{{ row.domain }}</span></td><td>{{ row.day }}</td><td class="mono">{{ row.client_ip || '-' }}</td><td>{{ row.region || '未知地区' }}</td><td>{{ row.user_id ? `#${row.user_id}` : '匿名' }}</td><td class="primary-cell">{{ row.user_email || '未关联账号' }}</td><td>{{ fmt(row.first_seen_at) }}</td><td>{{ fmt(row.last_seen_at) }}</td></tr></tbody></table></div></div>
       <p v-if="!busy && total === 0">当前范围没有记录。</p><div class="filters"><button :disabled="page <= 1 || busy" @click="page--; load()">上一页</button><span>第 {{ page }} 页 · 共 {{ total }} 条</span><button :disabled="page * 20 >= total || busy" @click="page++; load()">下一页</button></div>
       <p v-if="tab === 'visits'" class="muted">同一站点、同一 IP 在 60 分钟内合并记录；这不是人数统计。地区由 IP 地理服务解析，解析失败时显示未知地区。</p>

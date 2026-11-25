@@ -44,8 +44,10 @@ func RegisterRoutes(r gin.IRoutes, h *Handler) {
 	r.GET("/site-console/scope", h.Scope)
 	r.GET("/site-console/overview", h.Overview)
 	r.GET("/site-console/users", h.Users)
+	r.PUT("/site-console/users/:id/site", h.AssignUserSite)
 	r.GET("/site-console/orders", h.Orders)
 	r.GET("/site-console/orders/:id", h.Order)
+	r.PUT("/site-console/orders/:id/site", h.AssignOrderSite)
 	r.GET("/site-console/visits", h.Visits)
 }
 func failure(c *gin.Context, status int, msg string) {
@@ -321,6 +323,29 @@ func (h *Handler) Users(c *gin.Context) {
 	rows, n, err := h.service.Store.ListUsers(f)
 	page(c, rows, n, f, err)
 }
+
+func (h *Handler) AssignUserSite(c *gin.Context) {
+	if !super(c) {
+		return
+	}
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		SiteID uint `json:"site_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, 400, "Invalid site assignment")
+		return
+	}
+	if err := h.service.Store.AssignUserSite(id, req.SiteID); err != nil {
+		failure(c, 400, "Unable to assign user to site")
+		return
+	}
+	h.record(c, "site_user_assignment", &id, jsonmap.JSON{"user_id": id, "site_id": req.SiteID})
+	response.Success(c, gin.H{"user_id": id, "site_id": req.SiteID})
+}
 func (h *Handler) Orders(c *gin.Context) {
 	f, ok := h.filter(c, "orders")
 	if !ok {
@@ -328,6 +353,29 @@ func (h *Handler) Orders(c *gin.Context) {
 	}
 	rows, n, err := h.service.Store.ListOrders(f)
 	page(c, rows, n, f, err)
+}
+
+func (h *Handler) AssignOrderSite(c *gin.Context) {
+	if !super(c) {
+		return
+	}
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		SiteID uint `json:"site_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, 400, "Invalid site assignment")
+		return
+	}
+	if err := h.service.Store.AssignOrderSite(id, req.SiteID); err != nil {
+		failure(c, 400, "Unable to assign order to site")
+		return
+	}
+	h.record(c, "site_order_assignment", &id, jsonmap.JSON{"order_id": id, "site_id": req.SiteID})
+	response.Success(c, gin.H{"order_id": id, "site_id": req.SiteID})
 }
 func (h *Handler) Visits(c *gin.Context) {
 	f, ok := h.filter(c, "visits")

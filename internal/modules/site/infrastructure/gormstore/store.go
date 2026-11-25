@@ -144,6 +144,29 @@ func (s *Store) ListUsers(f sitecontract.Filter) ([]sitecontract.UserRow, int64,
 	err := paging(q.Select("id,email,display_name,registration_site_id,registration_domain,created_at").Order("id DESC"), f).Scan(&rows).Error
 	return rows, n, err
 }
+
+func (s *Store) AssignUserSite(userID, siteID uint) error {
+	var domain string
+	if siteID > 0 {
+		var site sitedomain.Site
+		if err := s.db.First(&site, siteID).Error; err != nil {
+			return err
+		}
+		domain = site.Domain
+	}
+	result := s.db.Model(&userdomain.User{}).Where("id = ? AND deleted_at IS NULL", userID).Updates(map[string]interface{}{
+		"registration_site_id": siteID,
+		"registration_domain":  domain,
+		"updated_at":           time.Now(),
+	})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
 func (s *Store) orderQuery(f sitecontract.Filter) *gorm.DB {
 	q := window(siteQuery(s.db.Model(&orderdomain.Order{}).Where("orders.deleted_at IS NULL AND orders.parent_id IS NULL AND orders.purpose <> 'invoice_tax'"), "orders.source_site_id", f), "orders.created_at", f)
 	if f.Keyword != "" {
@@ -166,6 +189,27 @@ func (s *Store) ListOrders(f sitecontract.Filter) ([]sitecontract.OrderRow, int6
 	rows := []sitecontract.OrderRow{}
 	err := paging(orderSelect(q).Order("orders.id DESC"), f).Scan(&rows).Error
 	return rows, n, err
+}
+
+func (s *Store) AssignOrderSite(orderID, siteID uint) error {
+	var domain string
+	if siteID > 0 {
+		var site sitedomain.Site
+		if err := s.db.First(&site, siteID).Error; err != nil {
+			return err
+		}
+		domain = site.Domain
+	}
+	result := s.db.Model(&orderdomain.Order{}).
+		Where("deleted_at IS NULL AND (id = ? OR parent_id = ?)", orderID, orderID).
+		Updates(map[string]interface{}{"source_site_id": siteID, "source_domain": domain})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 func (s *Store) GetOrder(id uint, f sitecontract.Filter) (*sitecontract.OrderRow, error) {
 	var row sitecontract.OrderRow

@@ -69,7 +69,9 @@ type Store interface {
 	DomainInUse(string) (bool, error)
 	RecordVisit(sitedomain.Visit) error
 	ListUsers(Filter) ([]UserRow, int64, error)
+	AssignUserSite(userID, siteID uint) error
 	ListOrders(Filter) ([]OrderRow, int64, error)
+	AssignOrderSite(orderID, siteID uint) error
 	GetOrder(uint, Filter) (*OrderRow, error)
 	ListVisits(Filter) ([]sitedomain.Visit, int64, error)
 	Overview(Filter) (Overview, error)
