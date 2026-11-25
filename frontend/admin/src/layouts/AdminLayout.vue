@@ -125,11 +125,11 @@ watch(() => route.path, () => {
 const navGroups = computed<NavGroup[]>(() => {
   const groups: NavGroup[] = [
     { id: 'site-console', label: '子站管理', icon: Users, items: [
-      { label: '经营统计', to: '/site-console/overview', icon: LayoutDashboard, permission: 'GET:/admin/site-console/scope' },
-      { label: '注册用户', to: '/site-console/users', icon: UserRound, permission: 'GET:/admin/site-console/scope' },
-      { label: '来源订单', to: '/site-console/orders', icon: ListOrdered, permission: 'GET:/admin/site-console/scope' },
-      { label: '访问记录', to: '/site-console/visits', icon: History, permission: 'GET:/admin/site-console/scope' },
-      { label: '站点与管理员', to: '/site-console/settings', icon: Settings, permission: 'GET:/admin/site-console/scope' },
+      { label: '经营统计', to: '/site-console/overview', icon: LayoutDashboard, permission: 'GET:/admin/site-console/overview' },
+      { label: '注册用户', to: '/site-console/users', icon: UserRound, permission: 'GET:/admin/site-console/users' },
+      { label: '来源订单', to: '/site-console/orders', icon: ListOrdered, permission: 'GET:/admin/site-console/orders' },
+      { label: '访问记录', to: '/site-console/visits', icon: History, permission: 'GET:/admin/site-console/visits' },
+      { label: '站点与管理员', to: '/site-console/settings', icon: Settings, permission: 'GET:/admin/site-console/settings' },
       { label: '商品清单', to: '/product-catalog', icon: Boxes, permission: 'GET:/admin/product-catalog' },
     ] },
     {
@@ -823,7 +823,7 @@ onBeforeUnmount(() => {
         <!-- Collapse toggle button -->
         <div class="border-t border-border">
           <div v-if="!sidebarCollapsed" class="px-6 py-3 text-[11px] text-muted-foreground space-y-1">
-            <p>© {{ new Date().getFullYear() }} GptPaynow <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
+            <p>© {{ new Date().getFullYear() }} GptPaynow</p>
             <p>GptPaynow Admin</p>
           </div>
           <button
@@ -891,7 +891,7 @@ onBeforeUnmount(() => {
             </div>
           </nav>
           <div class="px-6 py-4 border-t border-border text-[11px] text-muted-foreground space-y-1">
-            <p>© {{ new Date().getFullYear() }} GptPaynow <span v-if="appVersion" class="text-muted-foreground/70">{{ appVersion }}</span></p>
+            <p>© {{ new Date().getFullYear() }} GptPaynow</p>
           </div>
         </SheetContent>
       </Sheet>

@@ -88,7 +88,7 @@ export const useAdminAuthStore = defineStore('adminAuth', {
     permissions: readArrayStorage(PERMISSIONS_KEY),
     permissionsLoaded: false,
     siteRestricted: false,
-    siteGrants: [] as Array<{ product_catalog?: boolean }>,
+    siteGrants: [] as Array<{ overview?: boolean; users?: boolean; orders?: boolean; visits?: boolean; product_catalog?: boolean }>,
     challengeToken: '' as string,
     challengeExpiresAt: '' as string,
     requiresTotp: false as boolean,
@@ -173,7 +173,13 @@ export const useAdminAuthStore = defineStore('adminAuth', {
       if (this.isSuper) {
         return true
       }
-      if (this.siteRestricted) return permission.startsWith('GET:/admin/site-console/') || (permission === 'GET:/admin/product-catalog' && this.siteGrants.some((grant) => grant.product_catalog === true)) || permission === 'GET:/admin/2fa/status'
+      if (this.siteRestricted) {
+        if (permission === 'GET:/admin/site-console/scope') return true
+        const siteMenu = permission.match(/^GET:\/admin\/site-console\/(overview|users|orders|visits)$/)?.[1] as 'overview' | 'users' | 'orders' | 'visits' | undefined
+        if (siteMenu) return this.siteGrants.some((grant) => grant[siteMenu] === true)
+        if (permission === 'GET:/admin/product-catalog') return this.siteGrants.some((grant) => grant.product_catalog === true)
+        return permission === 'GET:/admin/2fa/status'
+      }
       const required = parsePermissionKey(permission)
       return this.permissions.some((item) => {
         const granted = parsePermissionKey(item)

@@ -36,6 +36,7 @@ func normalizeSiteSetting(value map[string]interface{}) jsonmap.JSON {
 	}
 
 	normalized["brand"] = normalizeSiteBrand(value["brand"])
+	normalized["downloads"] = normalizeSiteDownloads(value["downloads"])
 	normalized["contact"] = normalizeSiteContact(value["contact"])
 	normalized["seo"] = normalizeSiteLocalizedBlock(value["seo"], []string{"title", "keywords", "description"})
 	normalized["legal"] = normalizeSiteLocalizedBlock(value["legal"], []string{"terms", "privacy"})
@@ -193,6 +194,38 @@ func normalizeSiteBrand(raw interface{}) map[string]interface{} {
 	result["redemption_url"] = normalizeSiteURL(brandMap["redemption_url"])
 	result["site_description"] = normalizeSiteLocalizedField(brandMap["site_description"])
 	return result
+}
+
+// normalizeSiteDownloads 归一化前台资源下载页配置。只允许公开 URL，绝不保存 R2
+// Access Key、Secret 或 S3 endpoint；资源清单和对象通过浏览器直接读取。
+func normalizeSiteDownloads(raw interface{}) map[string]interface{} {
+	result := map[string]interface{}{
+		"enabled":      true,
+		"manifest_url": "",
+		"public_url":   "",
+	}
+	downloads, ok := raw.(map[string]interface{})
+	if !ok {
+		return result
+	}
+	result["enabled"] = parseSettingBool(downloads["enabled"])
+	result["manifest_url"] = normalizePublicResourceURL(downloads["manifest_url"])
+	result["public_url"] = normalizePublicResourceURL(downloads["public_url"])
+	return result
+}
+
+func normalizePublicResourceURL(raw interface{}) string {
+	value := strings.TrimSpace(normalizeSettingText(raw))
+	if value == "" {
+		return ""
+	}
+	if strings.HasPrefix(value, "/") && !strings.HasPrefix(value, "//") {
+		return value
+	}
+	if strings.HasPrefix(strings.ToLower(value), "https://") {
+		return strings.TrimRight(value, "/")
+	}
+	return ""
 }
 
 func normalizeSiteURL(raw interface{}) string {

@@ -136,6 +136,11 @@ func (h *Handler) GetConfig(c *gin.Context) {
 			"whatsapp": "https://wa.me/1234567890",
 		},
 		"scripts": make([]interface{}, 0),
+		"downloads": map[string]interface{}{
+			"enabled":      true,
+			"manifest_url": "",
+			"public_url":   "",
+		},
 	}
 
 	tenant, _ := reseller.TenantFromContext(c.Request.Context())

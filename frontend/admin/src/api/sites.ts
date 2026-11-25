@@ -5,7 +5,7 @@ export interface SiteGrant { site_id: number; overview: boolean; users: boolean;
 export interface SiteScope { restricted: boolean; is_super: boolean; grants: SiteGrant[]; sites: Site[]; base_domain: string }
 export interface SiteUser { id: number; email: string; display_name: string; registration_domain: string; created_at: string }
 export interface SiteOrder { id: number; order_no: string; source_domain: string; user_id: number; buyer_email: string; currency: string; total_amount: string; refunded_amount: string; status: string; created_at: string; items?: { title: Record<string, string>; quantity: number }[] }
-export interface SiteVisit { id: number; domain: string; day: string; user_id: number; first_seen_at: string; last_seen_at: string }
+export interface SiteVisit { id: number; domain: string; day: string; user_id: number; user_email?: string; client_ip?: string; region?: string; first_seen_at: string; last_seen_at: string }
 export interface SiteOverview { registered_users: number; browser_visits: number; by_currency: { currency: string; orders: number; paid_orders: number; missing_cost_orders: number; sales: string; refunds: string; net_revenue: string; cost: string; payment_fees: string; profit: string }[] }
 export const sitesAPI = {
   scope: () => api.get('/admin/site-console/scope'),

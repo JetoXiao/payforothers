@@ -101,6 +101,22 @@ func (s *Store) SetGrants(id uint, grants []sitedomain.Grant) error {
 	})
 }
 func (s *Store) RecordVisit(v sitedomain.Visit) error {
+	if v.ClientIP != "" {
+		var recent sitedomain.Visit
+		cutoff := v.LastSeenAt.Add(-60 * time.Minute)
+		if err := s.db.Where("site_id = ? AND client_ip = ? AND last_seen_at >= ?", v.SiteID, v.ClientIP, cutoff).Order("last_seen_at DESC").First(&recent).Error; err == nil {
+			updates := map[string]interface{}{"last_seen_at": v.LastSeenAt}
+			if v.UserID > 0 {
+				updates["user_id"] = v.UserID
+			}
+			if v.Region != "" {
+				updates["region"] = v.Region
+			}
+			return s.db.Model(&recent).Updates(updates).Error
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	}
 	return s.db.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "site_id"}, {Name: "day"}, {Name: "visitor_hash"}, {Name: "user_id"}}, DoUpdates: clause.Assignments(map[string]interface{}{"last_seen_at": v.LastSeenAt})}).Create(&v).Error
 }
 func siteQuery(q *gorm.DB, col string, f sitecontract.Filter) *gorm.DB {
@@ -168,14 +184,31 @@ func (s *Store) GetOrder(id uint, f sitecontract.Filter) (*sitecontract.OrderRow
 	return &row, err
 }
 func (s *Store) ListVisits(f sitecontract.Filter) ([]sitedomain.Visit, int64, error) {
-	q := window(siteQuery(s.db.Model(&sitedomain.Visit{}), "site_id", f), "first_seen_at", f)
+	q := window(siteQuery(s.db.Model(&sitedomain.Visit{}), "storefront_visits.site_id", f), "storefront_visits.first_seen_at", f)
 	var n int64
 	if err := q.Count(&n).Error; err != nil {
 		return nil, 0, err
 	}
-	rows := []sitedomain.Visit{}
-	err := paging(q.Order("id DESC"), f).Find(&rows).Error
-	return rows, n, err
+	type visitRow struct {
+		ID          uint
+		SiteID      uint
+		Domain      string
+		Day         string
+		VisitorHash string
+		UserID      uint
+		UserEmail   string
+		ClientIP    string
+		Region      string
+		FirstSeenAt time.Time
+		LastSeenAt  time.Time
+	}
+	rows := []visitRow{}
+	err := paging(q.Select("storefront_visits.*, COALESCE(users.email, '') AS user_email").Joins("LEFT JOIN users ON users.id = storefront_visits.user_id AND users.deleted_at IS NULL").Order("storefront_visits.id DESC"), f).Scan(&rows).Error
+	out := make([]sitedomain.Visit, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, sitedomain.Visit{ID: row.ID, SiteID: row.SiteID, Domain: row.Domain, Day: row.Day, VisitorHash: row.VisitorHash, UserID: row.UserID, UserEmail: row.UserEmail, ClientIP: row.ClientIP, Region: row.Region, FirstSeenAt: row.FirstSeenAt, LastSeenAt: row.LastSeenAt})
+	}
+	return out, n, err
 }
 
 var _ sitecontract.Store = (*Store)(nil)

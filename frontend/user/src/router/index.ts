@@ -19,6 +19,7 @@ const blogViewLoader: RouteComponentLoader = () => import('../views/Blog.vue')
 const noticeViewLoader: RouteComponentLoader = () => import('../views/Notice.vue')
 const loginViewLoader: RouteComponentLoader = () => import('../views/auth/Login.vue')
 const tutorialViewLoader: RouteComponentLoader = () => import('../views/Tutorial.vue')
+const downloadsViewLoader: RouteComponentLoader = () => import('../views/Downloads.vue')
 const resellerLayoutLoader: RouteComponentLoader = () => import('../views/reseller/ResellerConsoleLayout.vue')
 
 const routeWarmupLoaders: RouteComponentLoader[] = [
@@ -135,6 +136,11 @@ const router = createRouter({
             path: '/tutorials/chatgpt-recharge',
             name: 'chatgpt-recharge-tutorial',
             component: templateView('Tutorial', tutorialViewLoader),
+        },
+        {
+            path: '/downloads',
+            name: 'downloads',
+            component: templateView('Downloads', downloadsViewLoader),
         },
         {
             path: '/cart',

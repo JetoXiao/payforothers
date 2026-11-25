@@ -104,6 +104,11 @@ func TestUpdateSiteSettingNormalized(t *testing.T) {
 	svc := NewService(repo)
 
 	result, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{
+		"downloads": map[string]interface{}{
+			"enabled":      true,
+			"manifest_url": " https://downloads.example.com/manifest.json ",
+			"public_url":   "https://downloads.example.com/",
+		},
 		"brand": map[string]interface{}{
 			"site_name": 123,
 			"site_url":  "  https://example.com/path/  ",
@@ -193,6 +198,10 @@ func TestUpdateSiteSettingNormalized(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("update site config failed: %v", err)
+	}
+	downloads, ok := result["downloads"].(map[string]interface{})
+	if !ok || downloads["enabled"] != true || downloads["manifest_url"] != "https://downloads.example.com/manifest.json" || downloads["public_url"] != "https://downloads.example.com" {
+		t.Fatalf("unexpected downloads config: %#v", result["downloads"])
 	}
 
 	brand, ok := result["brand"].(map[string]interface{})

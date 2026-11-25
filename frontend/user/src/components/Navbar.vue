@@ -21,6 +21,9 @@
         <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-200 sm:px-5 sm:text-sm">
           <TicketCheck class="h-4 w-4 shrink-0" /> {{ t('nav.redemption') }}
         </a>
+        <router-link v-if="downloadsEnabled" to="/downloads" class="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-violet-200 bg-violet-50 px-3 text-xs font-semibold text-violet-700 shadow-sm transition hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-500 dark:border-violet-400/40 dark:bg-violet-400/10 dark:text-violet-200 sm:px-5 sm:text-sm" active-class="!bg-violet-200/70 dark:!bg-violet-400/20">
+          <Download class="h-4 w-4 shrink-0" /> {{ t('nav.downloads') }}
+        </router-link>
       </div>
 
       <!-- Right Side Actions -->
@@ -133,6 +136,9 @@
           <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-400/10 dark:text-blue-300" @click="showMobileMenu = false">
             <TicketCheck class="shrink-0" /> {{ t('nav.redemption') }}
           </a>
+          <router-link v-if="downloadsEnabled" to="/downloads" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-violet-600 transition hover:bg-violet-400/10 dark:text-violet-300" active-class="!bg-violet-400/15" @click="showMobileMenu = false">
+            <Download class="shrink-0" /> {{ t('nav.downloads') }}
+          </router-link>
 
           <!-- Guest orders (not in bottom nav) -->
           <Button v-if="!userAuthStore.isAuthenticated" as-child variant="ghost"
@@ -181,7 +187,7 @@ import { useTheme } from '../utils/theme'
 import { getImageUrl } from '../utils/image'
 import {
   Sun, Moon, ClipboardList, LogIn, User, LogOut, Languages, BookOpen,
-  EllipsisVertical, X, TicketCheck,
+  EllipsisVertical, X, TicketCheck, Download,
 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -218,6 +224,7 @@ const brandLogo = computed(() => {
   return raw ? getImageUrl(raw) : '/gptpaynow.svg'
 })
 const redemptionUrl = computed(() => String(appStore.config?.brand?.redemption_url || '').trim())
+const downloadsEnabled = computed(() => appStore.config?.downloads?.enabled !== false)
 
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value

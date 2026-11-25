@@ -11,6 +11,7 @@
         <nav class="flex gap-0.5 max-[900px]:hidden">
           <RouterLink to="/tutorials/chatgpt-recharge" class="whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 hover:text-cyan-800 dark:text-cyan-300 dark:hover:bg-cyan-400/10">{{ t('nav.tutorial') }}</RouterLink>
           <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold text-blue-700 transition-colors hover:bg-blue-50 hover:text-blue-800 dark:text-blue-300 dark:hover:bg-blue-400/10">{{ t('nav.redemption') }}</a>
+          <RouterLink v-if="downloadsEnabled" to="/downloads" class="whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold text-violet-700 transition-colors hover:bg-violet-50 hover:text-violet-800 dark:text-violet-300 dark:hover:bg-violet-400/10" active-class="!bg-violet-100/70 dark:!bg-violet-400/15">{{ t('nav.downloads') }}</RouterLink>
           <template v-for="item in menuItems" :key="item.key">
             <RouterLink
               v-if="item.type === 'route'"
@@ -74,6 +75,7 @@
               </template>
               <RouterLink to="/tutorials/chatgpt-recharge" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-50 dark:text-cyan-300 dark:hover:bg-cyan-400/10" @click="moreOpen = false">{{ t('nav.tutorial') }}</RouterLink>
               <a v-if="redemptionUrl" :href="redemptionUrl" target="_blank" rel="noopener noreferrer" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-400/10" @click="moreOpen = false">{{ t('nav.redemption') }}</a>
+              <RouterLink v-if="downloadsEnabled" to="/downloads" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-400/10" @click="moreOpen = false">{{ t('nav.downloads') }}</RouterLink>
               <RouterLink v-if="!userAuthStore.isAuthenticated" to="/guest/orders" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.guestOrders') }}</RouterLink>
               <RouterLink v-if="userAuthStore.isAuthenticated" to="/me" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.personalCenter') }}</RouterLink>
               <RouterLink v-else to="/auth/login" class="flex w-full items-center gap-2.5 rounded-sm px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" @click="moreOpen = false">{{ t('navbar.login') }}</RouterLink>
@@ -182,6 +184,7 @@ const brandLogo = computed(() => {
   return raw ? getImageUrl(raw) : '/gptpaynow.svg'
 })
 const redemptionUrl = computed(() => String(appStore.config?.brand?.redemption_url || '').trim())
+const downloadsEnabled = computed(() => appStore.config?.downloads?.enabled !== false)
 const brandDescription = computed(() => {
   const desc = appStore.config?.brand?.site_description
   if (desc && typeof desc === 'object') {

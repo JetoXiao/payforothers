@@ -19,6 +19,7 @@ import (
 	userdomain "github.com/dujiao-next/internal/modules/identity/user/domain"
 	orderdomain "github.com/dujiao-next/internal/modules/order/domain"
 	paymentdomain "github.com/dujiao-next/internal/modules/payment/domain"
+	productcatalogdomain "github.com/dujiao-next/internal/modules/productcatalog/domain"
 	resellerapp "github.com/dujiao-next/internal/modules/reseller/application"
 
 	siteapp "github.com/dujiao-next/internal/modules/site/application"
@@ -42,7 +43,7 @@ func setup(t *testing.T) (*gorm.DB, *sitestore.Store, *siteapp.Service) {
 	sql, err := db.DB()
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = sql.Close() })
-	require.NoError(t, db.AutoMigrate(&sitedomain.Site{}, &sitedomain.AdminScope{}, &sitedomain.Grant{}, &sitedomain.Visit{}, &userdomain.User{}, &admindomain.Admin{}, &orderdomain.Order{}, &orderdomain.OrderItem{}, &orderdomain.OrderRefundRecord{}, &paymentdomain.Payment{}))
+	require.NoError(t, db.AutoMigrate(&sitedomain.Site{}, &sitedomain.AdminScope{}, &sitedomain.Grant{}, &sitedomain.Visit{}, &userdomain.User{}, &admindomain.Admin{}, &orderdomain.Order{}, &orderdomain.OrderItem{}, &orderdomain.OrderRefundRecord{}, &paymentdomain.Payment{}, &productcatalogdomain.Item{}))
 	s := sitestore.New(db)
 	svc := siteapp.New(s, "gptpaynow.com", resellerapp.NewDomainResolver(nil, config.ResellerConfig{Enabled: false, TrustedForwardedHost: true}))
 	return db, s, svc
@@ -168,6 +169,7 @@ func seed(t *testing.T, db *gorm.DB) {
 	for _, i := range []orderdomain.OrderItem{{OrderID: 2, ProductID: 1, TitleJSON: jsonmap.JSON{"zh-CN": "ABC product"}, Quantity: 1, CostPrice: amt("60")}, {OrderID: 3, ProductID: 1, TitleJSON: jsonmap.JSON{}, Quantity: 1, CostPrice: amt("500")}, {OrderID: 4, ProductID: 1, TitleJSON: jsonmap.JSON{}, Quantity: 1, CostPrice: amt("0")}} {
 		require.NoError(t, db.Create(&i).Error)
 	}
+	require.NoError(t, db.Create(&productcatalogdomain.Item{ProductID: 1, SKUID: 0, CostPrice: amt("42")}).Error)
 	p := paymentdomain.Payment{OrderID: 1, Status: constants.PaymentStatusSuccess, Currency: "CNY", Amount: amt("103"), FeeAmount: amt("2"), FeePolicy: constants.PaymentFeePolicyMerchantAbsorbed, ProviderType: "epay"}
 	require.NoError(t, db.Create(&p).Error)
 	r := orderdomain.OrderRefundRecord{OrderID: 2, Type: "test", Currency: "CNY", Amount: amt("20.60"), PaymentFeeRefundedAmount: amt("0.40")}
@@ -212,12 +214,12 @@ func TestSiteDataAndDecimalProfitIsolation(t *testing.T) {
 			require.EqualValues(t, 2, r.Orders)
 			require.EqualValues(t, 1, r.PaidOrders)
 			require.Equal(t, "80.00", r.NetRevenue)
-			require.Equal(t, "60.00", r.Cost)
+			require.Equal(t, "42.00", r.Cost)
 			require.Equal(t, "1.60", r.PaymentFees)
-			require.Equal(t, "18.40", r.Profit)
+			require.Equal(t, "36.40", r.Profit)
 		} else {
-			require.Equal(t, "10.00", r.Profit)
-			require.EqualValues(t, 1, r.MissingCostOrders)
+			require.Equal(t, "-32.00", r.Profit)
+			require.Zero(t, r.MissingCostOrders)
 		}
 	}
 }
@@ -346,7 +348,7 @@ func TestBrowserVisitAndAuthenticatedAssociation(t *testing.T) {
 	r.ServeHTTP(httptest.NewRecorder(), req)
 	visits, n, err := store.ListVisits(filter(site.ID))
 	require.NoError(t, err)
-	require.EqualValues(t, 2, n)
+	require.EqualValues(t, 1, n)
 	require.Equal(t, uint(33), visits[0].UserID)
 	overview, err := store.Overview(filter(site.ID))
 	require.NoError(t, err)
@@ -358,4 +360,48 @@ func TestBrowserVisitAndAuthenticatedAssociation(t *testing.T) {
 	_, err = svc.ResolveRequest(context.Background(), httptest.NewRequest("GET", "https://abc.gptpaynow.com", nil))
 	require.NoError(t, err)
 	require.False(t, strings.Contains(cookie.Value, "abc"))
+}
+
+func TestListVisitsIncludesAssociatedUserEmail(t *testing.T) {
+	db, store, svc := setup(t)
+	site := sitedomain.Site{Name: "ABC", Domain: "abc.gptpaynow.com", Enabled: true}
+	require.NoError(t, svc.SaveSite(&site))
+	user := userdomain.User{Email: "visitor@example.com", DisplayName: "Visitor", RegistrationDomain: site.Domain, RegistrationSiteID: site.ID}
+	require.NoError(t, db.Create(&user).Error)
+	now := time.Now()
+	require.NoError(t, store.RecordVisit(sitedomain.Visit{SiteID: site.ID, Domain: site.Domain, Day: now.Format("2006-01-02"), VisitorHash: "email-test", UserID: user.ID, FirstSeenAt: now, LastSeenAt: now}))
+	rows, total, err := store.ListVisits(filter(site.ID))
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, rows, 1)
+	require.Equal(t, user.Email, rows[0].UserEmail)
+}
+
+func TestRecordVisitMergesSameIPWithinFiveMinutes(t *testing.T) {
+	_, store, svc := setup(t)
+	site := sitedomain.Site{Name: "ABC", Domain: "abc.gptpaynow.com", Enabled: true}
+	require.NoError(t, svc.SaveSite(&site))
+	now := time.Now()
+	base := sitedomain.Visit{SiteID: site.ID, Domain: site.Domain, Day: now.Format("2006-01-02"), VisitorHash: "ip-bucket-1", ClientIP: "203.0.113.10", Region: "中国 · 北京", FirstSeenAt: now, LastSeenAt: now}
+	require.NoError(t, store.RecordVisit(base))
+	updated := base
+	updated.VisitorHash = "ip-bucket-2"
+	updated.LastSeenAt = now.Add(2 * time.Minute)
+	require.NoError(t, store.RecordVisit(updated))
+	rows, total, err := store.ListVisits(filter(site.ID))
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, rows, 1)
+	require.Equal(t, updated.LastSeenAt.Unix(), rows[0].LastSeenAt.Unix())
+	require.Equal(t, "203.0.113.10", rows[0].ClientIP)
+	require.Equal(t, "中国 · 北京", rows[0].Region)
+
+	later := base
+	later.VisitorHash = "ip-bucket-3"
+	later.FirstSeenAt = now.Add(70 * time.Minute)
+	later.LastSeenAt = later.FirstSeenAt
+	require.NoError(t, store.RecordVisit(later))
+	_, total, err = store.ListVisits(filter(site.ID))
+	require.NoError(t, err)
+	require.EqualValues(t, 2, total)
 }

@@ -281,7 +281,7 @@ func AdminRBACMiddleware(authzService *authz.Service) gin.HandlerFunc {
 		}
 
 		if scopeValue, ok := c.Get("site_scope"); ok {
-			if scope, ok := scopeValue.(sitedomain.Scope); ok && scope.Restricted && (strings.HasPrefix(c.FullPath(), "/api/v1/admin/site-console/") || c.FullPath() == "/api/v1/admin/authz/me" || c.FullPath() == "/api/v1/admin/password" || strings.HasPrefix(c.FullPath(), "/api/v1/admin/2fa/")) {
+			if scope, ok := scopeValue.(sitedomain.Scope); ok && scope.Restricted && (strings.HasPrefix(c.FullPath(), "/api/v1/admin/site-console/") || strings.HasPrefix(c.FullPath(), "/api/v1/admin/product-catalog") || c.FullPath() == "/api/v1/admin/authz/me" || c.FullPath() == "/api/v1/admin/password" || strings.HasPrefix(c.FullPath(), "/api/v1/admin/2fa/")) {
 				c.Next()
 				return
 			}

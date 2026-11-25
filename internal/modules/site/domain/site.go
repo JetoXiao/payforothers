@@ -27,18 +27,18 @@ type AdminScope struct {
 func (AdminScope) TableName() string { return "storefront_admin_scopes" }
 
 type Grant struct {
-	AdminID  uint `gorm:"primarykey" json:"admin_id"`
-	SiteID   uint `gorm:"primarykey" json:"site_id"`
-	Overview bool `json:"overview"`
-	Users    bool `json:"users"`
-	Orders   bool `json:"orders"`
-	Visits   bool `json:"visits"`
+	AdminID        uint `gorm:"primarykey" json:"admin_id"`
+	SiteID         uint `gorm:"primarykey" json:"site_id"`
+	Overview       bool `json:"overview"`
+	Users          bool `json:"users"`
+	Orders         bool `json:"orders"`
+	Visits         bool `json:"visits"`
 	ProductCatalog bool `json:"product_catalog"`
 }
 
 func (Grant) TableName() string { return "storefront_admin_grants" }
 
-// Visit counts at most one browser/user per site per day. No raw identifier/IP.
+// Visit aggregates requests from the same IP for a short window per site.
 type Visit struct {
 	ID          uint      `gorm:"primarykey" json:"id"`
 	SiteID      uint      `gorm:"uniqueIndex:idx_site_visit,priority:1;index" json:"site_id"`
@@ -46,6 +46,9 @@ type Visit struct {
 	Day         string    `gorm:"size:10;uniqueIndex:idx_site_visit,priority:2;index" json:"day"`
 	VisitorHash string    `gorm:"size:64;uniqueIndex:idx_site_visit,priority:3" json:"-"`
 	UserID      uint      `gorm:"index;uniqueIndex:idx_site_visit,priority:4" json:"user_id,omitempty"`
+	UserEmail   string    `gorm:"-" json:"user_email,omitempty"`
+	ClientIP    string    `gorm:"size:64;index" json:"client_ip,omitempty"`
+	Region      string    `gorm:"size:160" json:"region,omitempty"`
 	FirstSeenAt time.Time `json:"first_seen_at"`
 	LastSeenAt  time.Time `json:"last_seen_at"`
 }

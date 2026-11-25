@@ -191,6 +191,11 @@ const form = reactive({
     redemption_url: 'https://966qjy.xyz',
     site_description: createLocalizedField(),
   },
+  downloads: {
+    enabled: true,
+    manifest_url: '',
+    public_url: '',
+  },
   currency: 'CNY',
   order_max_refund_days: 30,
   contact: {
@@ -407,6 +412,12 @@ const fetchSettings = async () => {
         form.brand.site_logo = String(brand.site_logo || '')
         form.brand.redemption_url = String(brand.redemption_url || '')
         form.brand.site_description = normalizeLocalizedField(brand.site_description)
+      }
+      const downloads = data.downloads as Record<string, unknown> | undefined
+      if (downloads) {
+        form.downloads.enabled = downloads.enabled === true
+        form.downloads.manifest_url = String(downloads.manifest_url || '')
+        form.downloads.public_url = String(downloads.public_url || '')
       }
       {
         const rawCurrency = String(data.currency || 'CNY').trim().toUpperCase()
@@ -632,6 +643,7 @@ const saveSiteSettings = async () => {
     key: 'site_config',
     value: {
       brand: form.brand,
+      downloads: form.downloads,
       currency: String(form.currency || 'CNY').trim().toUpperCase(),
       contact: { ...form.contact, wechat },
       seo: form.seo,
@@ -1037,6 +1049,32 @@ onMounted(() => {
             <label class="text-xs font-medium text-muted-foreground">兑换网址</label>
             <Input v-model="form.brand.redemption_url" type="url" placeholder="https://example.com/redeem" />
             <p class="text-xs text-muted-foreground">自动交付订单会展示“兑换网址”和“兑换卡密”。仅支持 HTTPS，留空则保留原始交付内容。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-border bg-card">
+        <div class="border-b border-border bg-muted/40 px-6 py-4">
+          <h2 class="text-lg font-semibold">资源下载 / Cloudflare R2</h2>
+          <p class="mt-1 text-xs text-muted-foreground">配置公开的 manifest.json 和 R2 文件域名；不要填写 Access Key、Secret 或 S3 API 地址。</p>
+        </div>
+        <div class="grid grid-cols-1 gap-6 p-6">
+          <div class="flex items-start gap-3">
+            <Switch id="downloads-enabled" v-model="form.downloads.enabled" />
+            <div>
+              <Label for="downloads-enabled">启用资源下载入口</Label>
+              <p class="mt-1 text-xs text-muted-foreground">启用后，前台导航栏会在卡密兑换旁显示“资源下载”。</p>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <Label for="downloads-manifest-url">Manifest 地址</Label>
+            <Input id="downloads-manifest-url" v-model="form.downloads.manifest_url" type="url" placeholder="https://downloads.example.com/manifest.json" />
+            <p class="text-xs text-muted-foreground">需要允许前台站点 GET 读取的公开 JSON 地址；留空时前台使用构建环境变量或同源 /downloads/manifest.json。</p>
+          </div>
+          <div class="space-y-2">
+            <Label for="downloads-public-url">R2 公共文件地址</Label>
+            <Input id="downloads-public-url" v-model="form.downloads.public_url" type="url" placeholder="https://downloads.example.com" />
+            <p class="text-xs text-muted-foreground">Manifest 资源项没有 url 时，页面会用此地址拼接 file_key。</p>
           </div>
         </div>
       </div>
