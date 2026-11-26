@@ -78,6 +78,11 @@ func (h *Handler) load() (map[string]interface{}, r2Config, []map[string]interfa
 
 func r2ConfigFrom(raw interface{}) r2Config {
 	m, _ := raw.(map[string]interface{})
+	if m == nil {
+		if value, ok := raw.(jsonmap.JSON); ok {
+			m = map[string]interface{}(value)
+		}
+	}
 	region := stringValue(m["region"])
 	if region == "" {
 		region = "auto"

@@ -225,6 +225,15 @@ func normalizeSiteDownloads(raw interface{}) map[string]interface{} {
 			r2["use_path_style"] = value
 		}
 		result["r2"] = r2
+	} else if rawR2, ok := downloads["r2"].(jsonmap.JSON); ok {
+		r2 := map[string]interface{}{}
+		for _, key := range []string{"endpoint", "bucket", "access_key_id", "secret_access_key", "region", "use_path_style", "cors"} {
+			r2[key] = normalizeSettingText(rawR2[key])
+		}
+		if value, ok := rawR2["use_path_style"].(bool); ok {
+			r2["use_path_style"] = value
+		}
+		result["r2"] = r2
 	}
 	return result
 }
