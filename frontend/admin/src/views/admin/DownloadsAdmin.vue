@@ -19,8 +19,9 @@
         <label>存储桶<input v-model="r2.bucket" placeholder="downloads" /></label>
         <label>Access Key ID<input v-model="r2.access_key_id" autocomplete="off" /></label>
         <label>Secret Access Key<input v-model="r2.secret_access_key" type="password" :placeholder="r2.secret_saved ? '已保存，留空保持不变' : '必须填写 Secret Access Key'" autocomplete="new-password" /></label>
-        <label>对象前缀<input v-model="r2.prefix" placeholder="downloads/" /></label>
-        <label>公开文件域名<input v-model="r2.public_url" placeholder="https://downloads.example.com" /></label>
+        <label>区域<input v-model="r2.region" placeholder="auto" /></label>
+        <label class="check-field"><input v-model="r2.use_path_style" type="checkbox" /> 使用 Path-style S3 地址</label>
+        <label class="wide">浏览器上传 CORS 配置<textarea v-model="r2.cors" rows="7" placeholder='[{"AllowedOrigins":["https://www.gptpaynow.com"],"AllowedMethods":["GET","PUT"],"AllowedHeaders":["*"]}]' /></label>
       </div>
       <div v-if="missingFields.length" class="missing"><strong>还缺少：</strong><span v-for="field in missingFields" :key="field">{{ field }}</span></div>
       <p v-if="message" class="message" :class="messageKind">{{ message }}</p>
@@ -42,11 +43,11 @@ import { adminAPI } from '@/api/admin'
 type Resource = { id?: number; slug: string; title: Record<string, string>; description: Record<string, string>; platform?: string; version?: string; file_key?: string; download_name?: string; content_type?: string; sha256?: string; size?: string; updated_at?: string; download_count: number; published: boolean; sort_order?: number }
 const resources = ref<Resource[]>([])
 const resourceOpen = ref(false); const saving = ref(false)
-const r2 = reactive({ endpoint: '', bucket: '', access_key_id: '', secret_access_key: '', secret_saved: false, prefix: 'downloads/', public_url: '' })
+const r2 = reactive({ endpoint: '', bucket: '', access_key_id: '', secret_access_key: '', secret_saved: false, region: 'auto', use_path_style: true, cors: '' })
 const message = ref(''); const messageKind = ref<'ok' | 'error'>('ok')
 const editing = reactive<any>({ id: 0, slug: '', title: { zhCN: '', enUS: '' }, description: { zhCN: '', enUS: '' }, platform: '', version: '', file_key: '', download_name: '', content_type: 'application/octet-stream', sha256: '', published: true, sort_order: 0, file: null })
 const missingFields = computed(() => [
-  !r2.endpoint ? 'S3 API 端点' : '', !r2.bucket ? '存储桶' : '', !r2.access_key_id ? 'Access Key ID' : '', !(r2.secret_access_key || r2.secret_saved) ? 'Secret Access Key' : '', !r2.public_url ? '公开文件域名' : '',
+  !r2.endpoint ? 'S3 API 端点' : '', !r2.bucket ? '存储桶' : '', !r2.access_key_id ? 'Access Key ID' : '', !(r2.secret_access_key || r2.secret_saved) ? 'Secret Access Key' : '', !r2.cors ? 'CORS 配置' : '',
 ].filter(Boolean))
 const r2Configured = computed(() => missingFields.value.length === 0)
 const publishedCount = computed(() => resources.value.filter(item => item.published).length)
@@ -56,7 +57,7 @@ const saveR2 = async () => { message.value = ''; if (missingFields.value.length)
 const testR2 = async () => { message.value = ''; if (missingFields.value.length) { messageKind.value = 'error'; message.value = `请先填写：${missingFields.value.join('、')}`; return } saving.value = true; try { await adminAPI.testDownloadStorage({ ...r2 }); messageKind.value = 'ok'; message.value = '连接测试成功。' } catch (error: any) { messageKind.value = 'error'; message.value = error?.message || '连接测试失败，请检查端点、存储桶、密钥和权限。' } finally { saving.value = false } }
 const resetEditing = () => Object.assign(editing, { id: 0, slug: '', title: { zhCN: '', enUS: '' }, description: { zhCN: '', enUS: '' }, platform: '', version: '', file_key: '', download_name: '', content_type: 'application/octet-stream', sha256: '', published: true, sort_order: 0, file: null })
 const edit = (row: Resource) => { Object.assign(editing, { ...row, title: { zhCN: row.title?.['zh-CN'] || '', enUS: row.title?.['en-US'] || '' }, description: { zhCN: row.description?.['zh-CN'] || '', enUS: row.description?.['en-US'] || '' } }); resourceOpen.value = true }
-const onFile = (event: Event) => { editing.file = (event.target as HTMLInputElement).files?.[0] || null; if (editing.file && !editing.file_key) editing.file_key = `${r2.prefix || 'downloads/'}` + editing.file.name }
+const onFile = (event: Event) => { editing.file = (event.target as HTMLInputElement).files?.[0] || null; if (editing.file && !editing.file_key) editing.file_key = `downloads/${editing.file.name}` }
 const saveResource = async () => { saving.value = true; try { const data = { ...editing, title: { 'zh-CN': editing.title.zhCN, 'en-US': editing.title.enUS }, description: { 'zh-CN': editing.description.zhCN, 'en-US': editing.description.enUS } }; delete data.file; await adminAPI.saveDownloadResource(data, editing.file); resourceOpen.value = false; resetEditing(); await load() } finally { saving.value = false } }
 const remove = async (row: Resource) => { if (row.id && window.confirm(`确认删除资源 ${row.slug}？`)) { await adminAPI.deleteDownloadResource(row.id); await load() } }
 const formatDate = (value?: string) => value ? new Date(value).toLocaleDateString('zh-CN') : '-'

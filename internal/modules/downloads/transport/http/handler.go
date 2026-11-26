@@ -41,8 +41,9 @@ type r2Config struct {
 	Bucket          string `json:"bucket"`
 	AccessKeyID     string `json:"access_key_id"`
 	SecretAccessKey string `json:"secret_access_key"`
-	Prefix          string `json:"prefix"`
-	PublicURL       string `json:"public_url"`
+	Region          string `json:"region"`
+	UsePathStyle    bool   `json:"use_path_style"`
+	CORS            string `json:"cors"`
 }
 
 func RegisterPublicRoutes(public gin.IRoutes, h *Handler) {
@@ -77,7 +78,12 @@ func (h *Handler) load() (map[string]interface{}, r2Config, []map[string]interfa
 
 func r2ConfigFrom(raw interface{}) r2Config {
 	m, _ := raw.(map[string]interface{})
-	return r2Config{Endpoint: stringValue(m["endpoint"]), Bucket: stringValue(m["bucket"]), AccessKeyID: stringValue(m["access_key_id"]), SecretAccessKey: stringValue(m["secret_access_key"]), Prefix: stringValue(m["prefix"]), PublicURL: stringValue(m["public_url"])}
+	region := stringValue(m["region"])
+	if region == "" {
+		region = "auto"
+	}
+	usePathStyle, _ := m["use_path_style"].(bool)
+	return r2Config{Endpoint: stringValue(m["endpoint"]), Bucket: stringValue(m["bucket"]), AccessKeyID: stringValue(m["access_key_id"]), SecretAccessKey: stringValue(m["secret_access_key"]), Region: region, UsePathStyle: usePathStyle, CORS: stringValue(m["cors"])}
 }
 
 func resourceList(raw interface{}) []map[string]interface{} {
@@ -115,7 +121,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	r2.SecretAccessKey = ""
 	response.Success(c, gin.H{"r2": gin.H{
 		"endpoint": r2.Endpoint, "bucket": r2.Bucket, "access_key_id": r2.AccessKeyID,
-		"secret_access_key": "", "secret_saved": r2.SecretAccessKey != "", "prefix": r2.Prefix, "public_url": r2.PublicURL,
+		"secret_access_key": "", "secret_saved": r2.SecretAccessKey != "", "region": r2.Region, "use_path_style": r2.UsePathStyle, "cors": r2.CORS,
 	}, "resources": resources})
 }
 
@@ -135,7 +141,7 @@ func (h *Handler) UpdateConfig(c *gin.Context) {
 	if req.R2.SecretAccessKey == "" {
 		req.R2.SecretAccessKey = old.SecretAccessKey
 	}
-	downloads := map[string]interface{}{"enabled": true, "manifest_url": req.R2.PublicURL + "/manifest.json", "public_url": strings.TrimRight(req.R2.PublicURL, "/"), "r2": structMap(req.R2), "resources": resources}
+	downloads := map[string]interface{}{"enabled": true, "manifest_url": "", "public_url": "", "r2": structMap(req.R2), "resources": resources}
 	if err := h.save(config, downloads); err != nil {
 		ginutil.RespondError(c, response.CodeInternal, "error.settings_save_failed", err)
 		return
@@ -212,9 +218,9 @@ func (h *Handler) writeResource(c *gin.Context, id uint) {
 	}
 	file, fileErr := c.FormFile("file")
 	if fileErr == nil {
-		key := strings.TrimPrefix(cfg.Prefix, "/") + strings.TrimPrefix(c.PostForm("file_key"), "/")
+		key := "downloads/" + strings.TrimPrefix(c.PostForm("file_key"), "/")
 		if strings.TrimSpace(c.PostForm("file_key")) == "" {
-			key = strings.TrimSuffix(cfg.Prefix, "/") + "/" + file.Filename
+			key = "downloads/" + file.Filename
 		}
 		data, readErr := readMultipart(file)
 		if readErr != nil {
@@ -250,7 +256,7 @@ func (h *Handler) writeResource(c *gin.Context, id uint) {
 	if !updated {
 		resources = append(resources, raw)
 	}
-	downloads := map[string]interface{}{"enabled": true, "manifest_url": cfg.PublicURL + "/manifest.json", "public_url": strings.TrimRight(cfg.PublicURL, "/"), "r2": structMap(cfg), "resources": resources}
+	downloads := map[string]interface{}{"enabled": true, "manifest_url": "", "public_url": "", "r2": structMap(cfg), "resources": resources}
 	if err := h.save(config, downloads); err != nil {
 		ginutil.RespondError(c, response.CodeInternal, "error.settings_save_failed", err)
 		return
@@ -275,7 +281,7 @@ func (h *Handler) DeleteResource(c *gin.Context) {
 			filtered = append(filtered, item)
 		}
 	}
-	downloads := map[string]interface{}{"enabled": true, "manifest_url": cfg.PublicURL + "/manifest.json", "public_url": strings.TrimRight(cfg.PublicURL, "/"), "r2": structMap(cfg), "resources": filtered}
+	downloads := map[string]interface{}{"enabled": true, "manifest_url": "", "public_url": "", "r2": structMap(cfg), "resources": filtered}
 	if err := h.save(config, downloads); err != nil {
 		ginutil.RespondError(c, response.CodeInternal, "error.settings_save_failed", err)
 		return
@@ -326,7 +332,7 @@ func (h *Handler) Download(c *gin.Context) {
 				return
 			}
 			item["download_count"] = number(item["download_count"]) + 1
-			downloads := map[string]interface{}{"enabled": true, "manifest_url": cfg.PublicURL + "/manifest.json", "public_url": strings.TrimRight(cfg.PublicURL, "/"), "r2": structMap(cfg), "resources": resources}
+			downloads := map[string]interface{}{"enabled": true, "manifest_url": "", "public_url": "", "r2": structMap(cfg), "resources": resources}
 			_ = h.save(config, downloads)
 			c.Redirect(http.StatusFound, signedURL(cfg, key, 15*time.Minute))
 			return
@@ -342,7 +348,7 @@ func validateR2(cfg r2Config) error {
 	return nil
 }
 func structMap(cfg r2Config) map[string]interface{} {
-	return map[string]interface{}{"endpoint": cfg.Endpoint, "bucket": cfg.Bucket, "access_key_id": cfg.AccessKeyID, "secret_access_key": cfg.SecretAccessKey, "prefix": cfg.Prefix, "public_url": cfg.PublicURL}
+	return map[string]interface{}{"endpoint": cfg.Endpoint, "bucket": cfg.Bucket, "access_key_id": cfg.AccessKeyID, "secret_access_key": cfg.SecretAccessKey, "region": cfg.Region, "use_path_style": cfg.UsePathStyle, "cors": cfg.CORS}
 }
 func clone(v map[string]interface{}) map[string]interface{} {
 	out := map[string]interface{}{}
@@ -395,7 +401,11 @@ func signURL(cfg r2Config, key string, ttl time.Duration) string {
 	u, _ := url.Parse(strings.TrimRight(cfg.Endpoint, "/"))
 	u.Path = "/" + strings.Trim(cfg.Bucket, "/") + "/" + strings.TrimLeft(key, "/")
 	now := time.Now().UTC()
-	scope := now.Format("20060102") + "/auto/s3/aws4_request"
+	region := cfg.Region
+	if region == "" {
+		region = "auto"
+	}
+	scope := now.Format("20060102") + "/" + region + "/s3/aws4_request"
 	credential := cfg.AccessKeyID + "/" + scope
 	params := u.Query()
 	params.Set("X-Amz-Algorithm", "AWS4-HMAC-SHA256")
@@ -422,7 +432,11 @@ func signedRequest(method string, cfg r2Config, key string, body []byte, content
 		req.Header.Set("Content-Type", contentType)
 	}
 	now := time.Now().UTC()
-	scope := now.Format("20060102") + "/auto/s3/aws4_request"
+	region := cfg.Region
+	if region == "" {
+		region = "auto"
+	}
+	scope := now.Format("20060102") + "/" + region + "/s3/aws4_request"
 	payload := sha256Hex(body)
 	canonical := method + "\n" + uriPath(reqURL.Path) + "\n\n" + "host:" + reqURL.Host + "\n" + "x-amz-content-sha256:" + payload + "\n\n" + "host;x-amz-content-sha256\n" + payload
 	req.Header.Set("x-amz-content-sha256", payload)
