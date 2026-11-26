@@ -13,7 +13,7 @@
     </div>
 
     <section class="panel">
-      <div class="panel-head"><div><h2>R2 下载存储</h2><p>凭据仅保存在服务器设置中；Secret 保存后不会回显，但测试连接会自动复用。</p></div><span class="badge" :class="r2Configured ? 'good' : 'warn'">{{ r2Configured ? '已配置' : '未配置' }}</span></div>
+      <div class="panel-head"><div><h2>R2 下载存储 · CORS 配置</h2><p>凭据仅保存在服务器设置中；Secret 保存后不会回显，但测试连接会自动复用。</p></div><span class="badge" :class="r2Configured ? 'good' : 'warn'">{{ r2Configured ? '已配置' : '未配置' }}</span></div>
       <div class="grid">
         <label>S3 API 端点<input v-model="r2.endpoint" placeholder="https://account.r2.cloudflarestorage.com" /></label>
         <label>存储桶<input v-model="r2.bucket" placeholder="downloads" /></label>
