@@ -123,10 +123,11 @@ func (h *Handler) GetConfig(c *gin.Context) {
 		return
 	}
 	_ = config
+	secretSaved := r2.SecretAccessKey != ""
 	r2.SecretAccessKey = ""
 	response.Success(c, gin.H{"r2": gin.H{
 		"endpoint": r2.Endpoint, "bucket": r2.Bucket, "access_key_id": r2.AccessKeyID,
-		"secret_access_key": "", "secret_saved": r2.SecretAccessKey != "", "region": r2.Region, "use_path_style": r2.UsePathStyle, "cors": r2.CORS,
+		"secret_access_key": "", "secret_saved": secretSaved, "region": r2.Region, "use_path_style": r2.UsePathStyle, "cors": r2.CORS,
 	}, "resources": resources})
 }
 
@@ -465,7 +466,10 @@ func signedRequest(method string, cfg r2Config, key string, body []byte, content
 func signature(secret string, now time.Time, scope, canonical string) string {
 	date := now.Format("20060102")
 	kDate := hmacSHA([]byte("AWS4"+secret), date)
-	kRegion := hmacSHA(kDate, "auto")
+	region := "auto"
+	parts := strings.Split(scope, "/")
+	if len(parts) > 1 && parts[1] != "" { region = parts[1] }
+	kRegion := hmacSHA(kDate, region)
 	kService := hmacSHA(kRegion, "s3")
 	kSigning := hmacSHA(kService, "aws4_request")
 	hashed := sha256Hex([]byte(canonical))
@@ -477,7 +481,12 @@ func hmacSHA(key []byte, data string) []byte {
 	_, _ = h.Write([]byte(data))
 	return h.Sum(nil)
 }
-func uriPath(v string) string { return strings.ReplaceAll(url.PathEscape(v), "+", "%20") }
+func uriPath(v string) string {
+	escaped := strings.ReplaceAll(url.PathEscape(v), "+", "%20")
+	escaped = strings.ReplaceAll(escaped, "%2F", "/")
+	escaped = strings.ReplaceAll(escaped, "%2f", "/")
+	return escaped
+}
 func canonicalQuery(q url.Values) string {
 	keys := make([]string, 0, len(q))
 	for k := range q {
