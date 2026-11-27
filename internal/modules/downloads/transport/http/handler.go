@@ -228,19 +228,14 @@ func (h *Handler) writeResource(c *gin.Context, id uint) {
 		if strings.TrimSpace(c.PostForm("file_key")) == "" {
 			key = "downloads/" + file.Filename
 		}
-		data, readErr := readMultipart(file)
-		if readErr != nil {
-			ginutil.RespondError(c, response.CodeBadRequest, "error.upload_failed", readErr)
-			return
-		}
-		status, putErr := signedRequest("PUT", cfg, key, data, file.Header.Get("Content-Type"))
+		status, checksum, putErr := uploadMultipart(file, cfg, key)
 		if putErr != nil || status < 200 || status >= 300 {
 			ginutil.RespondErrorWithMsg(c, response.CodeBadRequest, "R2 上传失败", putErr)
 			return
 		}
 		raw["file_key"] = key
-		raw["size"] = formatSize(int64(len(data)))
-		raw["sha256"] = sha256Hex(data)
+		raw["size"] = formatSize(file.Size)
+		raw["sha256"] = checksum
 		raw["content_type"] = file.Header.Get("Content-Type")
 		raw["download_name"] = file.Filename
 	}
@@ -379,6 +374,39 @@ func number(v interface{}) uint {
 		return uint(x)
 	}
 }
+func uploadMultipart(file *multipart.FileHeader, cfg r2Config, key string) (int, string, error) {
+	if file == nil {
+		return 0, "", fmt.Errorf("未上传文件")
+	}
+	if file.Size > 1024*1024*1024 {
+		return 0, "", fmt.Errorf("文件超过 1GB 限制")
+	}
+	checksumFile, err := file.Open()
+	if err != nil {
+		return 0, "", err
+	}
+	hash := sha256.New()
+	if _, err := io.Copy(hash, checksumFile); err != nil {
+		_ = checksumFile.Close()
+		return 0, "", err
+	}
+	if err := checksumFile.Close(); err != nil {
+		return 0, "", err
+	}
+	payloadHash := hex.EncodeToString(hash.Sum(nil))
+	uploadFile, err := file.Open()
+	if err != nil {
+		return 0, "", err
+	}
+	defer uploadFile.Close()
+	contentType := file.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	status, err := signedRequestReader("PUT", cfg, key, uploadFile, file.Size, payloadHash, contentType)
+	return status, payloadHash, err
+}
+
 func readMultipart(file *multipart.FileHeader) ([]byte, error) {
 	if file.Size > 1024*1024*1024 {
 		return nil, fmt.Errorf("文件超过 1GB 限制")
@@ -427,12 +455,18 @@ func signURL(cfg r2Config, key string, ttl time.Duration) string {
 	return u.String()
 }
 func signedRequest(method string, cfg r2Config, key string, body []byte, contentType string) (int, error) {
+	payloadHash := sha256Hex(body)
+	return signedRequestReader(method, cfg, key, bytes.NewReader(body), int64(len(body)), payloadHash, contentType)
+}
+
+func signedRequestReader(method string, cfg r2Config, key string, body io.Reader, contentLength int64, payloadHash, contentType string) (int, error) {
 	reqURL, _ := url.Parse(strings.TrimRight(cfg.Endpoint, "/"))
 	reqURL.Path = "/" + strings.Trim(cfg.Bucket, "/") + "/" + strings.TrimLeft(key, "/")
-	req, err := http.NewRequest(method, reqURL.String(), bytes.NewReader(body))
+	req, err := http.NewRequest(method, reqURL.String(), body)
 	if err != nil {
 		return 0, err
 	}
+	req.ContentLength = contentLength
 	req.Header.Set("Host", reqURL.Host)
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
@@ -443,13 +477,13 @@ func signedRequest(method string, cfg r2Config, key string, body []byte, content
 		region = "auto"
 	}
 	scope := now.Format("20060102") + "/" + region + "/s3/aws4_request"
-	payload := sha256Hex(body)
-	canonical := method + "\n" + uriPath(reqURL.Path) + "\n\n" + "host:" + reqURL.Host + "\n" + "x-amz-content-sha256:" + payload + "\n\n" + "host;x-amz-content-sha256\n" + payload
-	req.Header.Set("x-amz-content-sha256", payload)
+	canonical := method + "\n" + uriPath(reqURL.Path) + "\n\n" + "host:" + reqURL.Host + "\n" + "x-amz-content-sha256:" + payloadHash + "\n\n" + "host;x-amz-content-sha256\n" + payloadHash
+	req.Header.Set("x-amz-content-sha256", payloadHash)
 	req.Header.Set("x-amz-date", now.Format("20060102T150405Z"))
 	sig := signature(cfg.SecretAccessKey, now, scope, canonical)
 	req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential="+cfg.AccessKeyID+"/"+scope+", SignedHeaders=host;x-amz-content-sha256, Signature="+sig)
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{Timeout: 30 * time.Minute}
+	resp, err := client.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -468,7 +502,9 @@ func signature(secret string, now time.Time, scope, canonical string) string {
 	kDate := hmacSHA([]byte("AWS4"+secret), date)
 	region := "auto"
 	parts := strings.Split(scope, "/")
-	if len(parts) > 1 && parts[1] != "" { region = parts[1] }
+	if len(parts) > 1 && parts[1] != "" {
+		region = parts[1]
+	}
 	kRegion := hmacSHA(kDate, region)
 	kService := hmacSHA(kRegion, "s3")
 	kSigning := hmacSHA(kService, "aws4_request")

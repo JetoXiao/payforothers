@@ -67,6 +67,7 @@ function getHttpErrorMessage(status: number): string {
 
 const baseURL = `${API_BASE_URL}${API_PREFIX}`
 const timeout = 10000
+const uploadTimeout = 30 * 60 * 1000
 
 function responseHeadersToObject(headers: Headers): Record<string, string> {
   const result: Record<string, string> = {}
@@ -211,10 +212,58 @@ async function request(method: string, path: string, bodyOrOptions?: any, option
   return { data }
 }
 
+async function uploadRequest(method: string, path: string, form: FormData, onProgress?: (loaded: number, total: number) => void): Promise<{ data: any; headers?: Record<string, string> }> {
+  const url = buildUrl(baseURL, path)
+  const locale = getLocale()
+  const token = localStorage.getItem('admin_token')
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open(method, url)
+    xhr.timeout = uploadTimeout
+    if (locale) xhr.setRequestHeader('X-Lang', locale)
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded, event.total)
+    }
+    xhr.onerror = () => {
+      const message = t('common.api.networkError')
+      notifyError(message)
+      reject(createNotifiedError(message))
+    }
+    xhr.ontimeout = () => {
+      const message = '文件上传超时，请检查网络或 R2 配置后重试'
+      notifyError(message)
+      reject(createNotifiedError(message))
+    }
+    xhr.onload = () => {
+      let data: any
+      try { data = JSON.parse(xhr.responseText || '{}') } catch {
+        const message = getHttpErrorMessage(xhr.status)
+        notifyError(message)
+        reject(createNotifiedError(message))
+        return
+      }
+      if (xhr.status === 401 && !isLoginEndpoint(path)) {
+        redirectToLogin()
+      }
+      if (xhr.status < 200 || xhr.status >= 300 || (typeof data.status_code !== 'undefined' && data.status_code !== 0)) {
+        const message = data?.msg || getHttpErrorMessage(xhr.status)
+        notifyError(message)
+        reject(createNotifiedError(message))
+        return
+      }
+      onProgress?.(1, 1)
+      resolve({ data, headers: {} })
+    }
+    xhr.send(form)
+  })
+}
+
 export const api = {
   get: (path: string, options?: RequestOptions) => request('GET', path, options),
   post: (path: string, body?: any, options?: RequestOptions) => request('POST', path, body, options),
   put: (path: string, body?: any, options?: RequestOptions) => request('PUT', path, body, options),
   patch: (path: string, body?: any, options?: RequestOptions) => request('PATCH', path, body, options),
   delete: (path: string, options?: RequestOptions) => request('DELETE', path, options),
+  upload: (method: 'POST' | 'PUT', path: string, form: FormData, onProgress?: (loaded: number, total: number) => void) => uploadRequest(method, path, form, onProgress),
 }

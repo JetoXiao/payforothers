@@ -375,11 +375,13 @@ export const adminAPI = {
   updateDownloadConfig: (data: Record<string, unknown>) => api.put('/admin/downloads/config', data),
   getDownloadResources: () => api.get('/admin/downloads/resources'),
   testDownloadStorage: (data: Record<string, unknown>) => api.post('/admin/downloads/test', data),
-  saveDownloadResource: (resource: Record<string, unknown>, file?: File | null) => {
+  saveDownloadResource: (resource: Record<string, unknown>, file?: File | null, onProgress?: (loaded: number, total: number) => void) => {
     const form = new FormData()
     form.append('resource', JSON.stringify(resource))
     if (file) form.append('file', file)
-    return resource.id ? api.put(`/admin/downloads/resources/${resource.id}`, form) : api.post('/admin/downloads/resources', form)
+    return resource.id
+      ? api.upload('PUT', `/admin/downloads/resources/${resource.id}`, form, onProgress)
+      : api.upload('POST', '/admin/downloads/resources', form, onProgress)
   },
   deleteDownloadResource: (id: number) => api.delete(`/admin/downloads/resources/${id}`),
   listInvoices: (params?: Record<string, unknown>) => api.get('/admin/invoices', { params }),

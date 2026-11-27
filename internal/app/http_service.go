@@ -9,10 +9,12 @@ import (
 
 const (
 	httpReadHeaderTimeout = 10 * time.Second
-	httpReadTimeout       = 30 * time.Second
-	httpWriteTimeout      = 60 * time.Second
-	httpIdleTimeout       = 120 * time.Second
-	httpMaxHeaderBytes    = 1 << 20
+	// Resource downloads can be large R2 packages. Keep enough time for the
+	// client-to-server multipart upload and the server-to-R2 streaming PUT.
+	httpReadTimeout    = 30 * time.Minute
+	httpWriteTimeout   = 30 * time.Minute
+	httpIdleTimeout    = 120 * time.Second
+	httpMaxHeaderBytes = 1 << 20
 )
 
 // HTTPService HTTP 服务封装
