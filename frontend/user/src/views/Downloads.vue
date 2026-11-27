@@ -159,15 +159,19 @@ const normaliseResources = (payload: unknown): DownloadResource[] => {
   const list = Array.isArray(payload) ? payload : (payload && typeof payload === 'object' && Array.isArray((payload as { resources?: unknown }).resources) ? (payload as { resources: unknown[] }).resources : [])
   return list.map((item, index) => {
     const raw = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>
+    const id = String(raw.id || raw.slug || `resource-${index + 1}`)
     return {
-      id: String(raw.id || raw.slug || `resource-${index + 1}`),
+      id,
       title: raw.title as LocalizedText,
       description: raw.description as LocalizedText,
       category: String(raw.category || '').trim(),
       version: String(raw.version || '').trim(),
       size: String(raw.size || '').trim(),
       updated_at: String(raw.updated_at || raw.updatedAt || '').trim(),
-      url: String(raw.url || '').trim(),
+      // Public config is intentionally cached without a signed URL. Use the
+      // server download route when an id is available; it signs and redirects
+      // to R2 while recording the download count.
+      url: String(raw.url || (raw.id ? `/api/v1/public/downloads/resources/${raw.id}` : '')).trim(),
       file_key: String(raw.file_key || raw.fileKey || '').trim(),
       icon: String(raw.icon || '').trim(),
       featured: raw.featured === true,
