@@ -213,8 +213,20 @@ func normalizeSiteDownloads(raw interface{}) map[string]interface{} {
 	result["enabled"] = parseSettingBool(downloads["enabled"])
 	result["manifest_url"] = normalizePublicResourceURL(downloads["manifest_url"])
 	result["public_url"] = normalizePublicResourceURL(downloads["public_url"])
-	if resources, ok := downloads["resources"].([]interface{}); ok {
+	// HTTP handlers build the resource list as []map[string]interface{}, while
+	// values read back from JSON are []interface{}. Normalize both forms so a
+	// successful R2 upload is not silently discarded during settings writes.
+	switch resources := downloads["resources"].(type) {
+	case []interface{}:
 		result["resources"] = resources
+	case []map[string]interface{}:
+		items := make([]interface{}, 0, len(resources))
+		for _, resource := range resources {
+			items = append(items, resource)
+		}
+		result["resources"] = items
+	case jsonmap.JSON:
+		result["resources"] = []interface{}{resources}
 	}
 	if rawR2, ok := downloads["r2"].(map[string]interface{}); ok {
 		r2 := map[string]interface{}{}

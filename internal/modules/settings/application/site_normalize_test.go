@@ -375,6 +375,31 @@ func TestUpdateSiteSettingNormalized(t *testing.T) {
 	}
 }
 
+func TestUpdateSiteSettingPreservesResourceMaps(t *testing.T) {
+	repo := newMockSettingRepo()
+	svc := NewService(repo)
+	result, err := svc.Update(constants.SettingKeySiteConfig, map[string]interface{}{
+		"downloads": map[string]interface{}{
+			"resources": []map[string]interface{}{{"id": uint(7), "file_key": "downloads/large.msi"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("update site config failed: %v", err)
+	}
+	downloads, ok := result["downloads"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("unexpected downloads type: %T", result["downloads"])
+	}
+	resources, ok := downloads["resources"].([]interface{})
+	if !ok || len(resources) != 1 {
+		t.Fatalf("resource maps were discarded: %#v", downloads["resources"])
+	}
+	resource, ok := resources[0].(map[string]interface{})
+	if !ok || resource["file_key"] != "downloads/large.msi" {
+		t.Fatalf("unexpected resource: %#v", resources[0])
+	}
+}
+
 func TestUpdateSiteSettingNormalizedDefaultAbout(t *testing.T) {
 	repo := newMockSettingRepo()
 	svc := NewService(repo)
